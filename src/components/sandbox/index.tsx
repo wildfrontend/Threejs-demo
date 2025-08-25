@@ -8,13 +8,13 @@ import Map from '@/components/map';
 
 function Sandbox() {
   return (
-    <Canvas shadows camera={{ position: [15, 18, 15], fov: 50 }}>
+    <Canvas camera={{ position: [15, 18, 15], fov: 50 }} shadows>
       <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
+      <directionalLight castShadow intensity={1.2} position={[10, 20, 10]} />
       <Suspense fallback={null}>
         <Map />
       </Suspense>
-      <OrbitControls target={[0, 0, 0]} maxPolarAngle={Math.PI / 2.2} />
+      <OrbitControls maxPolarAngle={Math.PI / 2.2} target={[0, 0, 0]} />
     </Canvas>
   );
 }

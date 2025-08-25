@@ -129,6 +129,14 @@ const Map: FC<MapProps> = ({
     ? (densityProp ?? manifest.map.density ?? 0.5)
     : (densityProp ?? 0.5);
 
+  // 根據地圖尺寸重複地面貼圖以建立場景感
+  useEffect(() => {
+    grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+    // 將貼圖根據寬與深的比例進行重複，提升地圖覆蓋效果
+    grassTexture.repeat.set(w / 10, d / 10);
+    grassTexture.needsUpdate = true;
+  }, [grassTexture, w, d]);
+
   // 預載 glb，等 manifest 有資料才做
   useEffect(() => {
     if (!manifest) return;
@@ -219,23 +227,23 @@ const Map: FC<MapProps> = ({
 
       {/* 隨機物件 */}
       {placements.map((p, i) => (
-        <Model
-          key={`spawn-${i}`}
-          url={p.url}
-          position={p.position}
-          rotation={p.rotation}
-          scale={p.scale}
-        />
+          <Model
+            key={`spawn-${i}`}
+            position={p.position}
+            rotation={p.rotation}
+            scale={p.scale}
+            url={p.url}
+          />
       ))}
 
       {/* 圍籬 */}
       {fenceItems.map((f, i) => (
-        <Model
-          key={`fence-${i}`}
-          url={f.url}
-          position={f.position}
-          rotation={f.rotation}
-        />
+          <Model
+            key={`fence-${i}`}
+            position={f.position}
+            rotation={f.rotation}
+            url={f.url}
+          />
       ))}
 
       {/* 若 manifest 載入失敗，可於開發時顯示錯誤 */}
@@ -243,7 +251,7 @@ const Map: FC<MapProps> = ({
         <group>
           <mesh position={[0, 0.01, 0]}>
             <planeGeometry args={[w * 0.8, d * 0.2]} />
-            <meshBasicMaterial color="red" transparent opacity={0.2} />
+              <meshBasicMaterial color="red" opacity={0.2} transparent />
           </mesh>
         </group>
       )}
