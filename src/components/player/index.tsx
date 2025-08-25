@@ -1,8 +1,6 @@
 import { useGLTF } from '@react-three/drei';
 import { useEffect } from 'react';
 
-import heroModel from '@/assets/hero.glb';
-
 const Player = () => {
   const { scene } = useGLTF('/assets/glb/character-digger.glb');
   useEffect(() => {
