@@ -1,9 +1,11 @@
-'use client';
-
-import { Canvas } from '@react-three/fiber';
+import Sandbox from '@/components/sandbox';
 
 function Page() {
-  return <Canvas></Canvas>;
+  return (
+    <div className="w-full h-dvh">
+      <Sandbox />
+    </div>
+  );
 }
 
 export default Page;
