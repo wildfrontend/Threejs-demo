@@ -58,6 +58,9 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     }
   }, [model]);
 
+  // Clear bullets when this vampire unmounts
+  useEffect(() => () => void (bulletsRef.current = []), []);
+
   useFrame((_, delta) => {
     if (gameGet().paused) return;
     // Track player
@@ -66,6 +69,16 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     }
     if (!playerRef.current || !group.current) return;
 
+    // If flagged killed/hidden, clear remaining bullets immediately
+    const gObj: any = group.current;
+    if (gObj?.userData?.killed || gObj?.visible === false) {
+      bulletsRef.current.length = 0;
+      if (imRef.current) {
+        imRef.current.count = 0 as unknown as number;
+        imRef.current.instanceMatrix.needsUpdate = true;
+      }
+      return;
+    }
     // Seek player on XZ plane
     const p = playerRef.current.getWorldPosition(tmpP.set(0, 0, 0));
     const g = group.current.position;

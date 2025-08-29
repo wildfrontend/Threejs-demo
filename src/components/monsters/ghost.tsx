@@ -58,6 +58,9 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     }
   }, [model]);
 
+  // Clear bullets when this ghost unmounts
+  useEffect(() => () => void (bulletsRef.current = []), []);
+
   useFrame((_, delta) => {
     if (gameGet().paused) return;
     // Track player
@@ -65,6 +68,16 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       playerRef.current = scene.getObjectByName("player") || null;
     }
     if (!playerRef.current || !group.current) return;
+
+    // If this ghost is flagged killed/hidden, stop spawning new bullets but let existing ones continue
+    const gObj: any = group.current;
+    const isDead = gObj?.userData?.killed || gObj?.visible === false;
+    
+    // Skip ghost behavior if dead, but continue bullet updates
+    if (isDead) {
+      // Ghost is dead - skip movement, attacks, and spawning new bullets
+      // But continue updating existing bullets in the code below
+    }
 
     // Seek player on XZ plane
     const p = playerRef.current.getWorldPosition(tmpP.set(0, 0, 0));
@@ -110,7 +123,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     }
 
     // Ranged attack when within attack range (do not fire when overlapping collision radius)
-    if (dist > R && dist <= attackR && atkTimer.current <= 0) {
+    if (!isDead && dist > R && dist <= attackR && atkTimer.current <= 0) {
       // Spawn a ghost bullet toward the player from center
       const target = p.clone();
       const dirCenter = target.clone().sub(start).setY(0).normalize();
@@ -119,7 +132,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     }
 
     // If already inside the hit-range, push just outside and start retreat
-    if (dist > 0 && dist < R) {
+    if (!isDead && dist > 0 && dist < R) {
       const away = g.clone().sub(p).setY(0);
       if (away.lengthSq() < 1e-6) away.set(1, 0, 0);
       away.normalize();
@@ -137,7 +150,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     }
 
     // Maintain distance: move toward if too far, move away if too close, else hold
-    if (dist > 1e-4) {
+    if (!isDead && dist > 1e-4) {
       const dirToPlayer = toPlayer.clone().normalize();
       const step = speed * delta;
       let moved = false;
@@ -157,7 +170,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     // Keep grounded
     group.current.position.y = 0;
 
-    // Update ghost bullets
+    // Update ghost bullets (continue even if ghost is dead)
     if (imRef.current) {
       const arr = bulletsRef.current;
       let write = 0;

@@ -10,10 +10,7 @@ import CollisionRange from '@/components/indicators/collision-range';
 import ShootRange from '@/components/indicators/shoot-range';
 import Map from '@/components/map';
 import Player from '@/components/player';
-import Skeleton from '@/components/monsters/skeleton';
-import Ghost from '@/components/monsters/ghost';
-import Vampire from '@/components/monsters/vampire';
-import ZombieSpawner from '../monsters/zombie-spawner';
+import Director from '@/components/director';
 
 function Sandbox() {
   return (
@@ -32,10 +29,7 @@ function Sandbox() {
         <Suspense fallback={null}>
           <Map />
           <Player />
-          <ZombieSpawner />
-          <Skeleton />
-          <Ghost />
-          <Vampire />
+          <Director />
           <FollowCamera />
           <CollisionRange />
           <ShootRange />

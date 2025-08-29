@@ -30,7 +30,7 @@ export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
 export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)
 // Enemy projectile speeds
-export const GHOST_BULLET_SPEED = 6; // slower than player bullets
+export const GHOST_BULLET_SPEED = 2; // much slower for clearer effect
 
 // Monster stats
 export const SKELETON_HP = 2;
