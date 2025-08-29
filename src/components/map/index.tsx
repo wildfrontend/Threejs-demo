@@ -1,9 +1,9 @@
+"use client";
+
 // src/components/map/index.tsx
 import { FC, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-
-import Model from '@/components/utils/model';
 
 function createCanvas(size: number) {
   const canvas = document.createElement('canvas');
@@ -18,8 +18,8 @@ function drawTileableGrass(size: number) {
 
   // Base gradient
   const g = ctx.createLinearGradient(0, 0, 0, size);
-  g.addColorStop(0, 'hsl(110, 36%, 22%)');
-  g.addColorStop(1, 'hsl(110, 36%, 22%)');
+  g.addColorStop(0, 'hsl(110, 40%, 36%)');
+  g.addColorStop(1, 'hsl(110, 45%, 36%)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
 
@@ -41,9 +41,9 @@ function drawTileableGrass(size: number) {
     ctx.globalAlpha = 1;
   };
 
-  noisePass(size * 40, 30, 28, 0.35);
-  noisePass(size * 25, 38, 24, 0.25);
-  noisePass(size * 15, 26, 20, 0.2);
+  noisePass(size * 40, 28, 40, 0.28);
+  noisePass(size * 25, 34, 36, 0.22);
+  noisePass(size * 15, 26, 32, 0.18);
 
   // Blade-like micro strokes for perceived grass fiber
   ctx.lineWidth = 1;
@@ -54,8 +54,8 @@ function drawTileableGrass(size: number) {
     const angle = -Math.PI / 2 + (Math.random() - 0.5) * (Math.PI / 6); // mostly vertical
     const h = 108 + (Math.random() - 0.5) * 10;
     const s = 40 + Math.random() * 20;
-    const l = 24 + Math.random() * 16;
-    ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, 0.25)`;
+    const l = 36 + Math.random() * 16;
+    ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, 0.22)`;
 
     const dx = Math.cos(angle) * len;
     const dy = Math.sin(angle) * len;
@@ -125,7 +125,7 @@ const Map: FC = () => {
 
   return (
     <group>
-      {/* Ground */}
+      {/* Ground only */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[500, 500, 1, 1]} />
         <meshStandardMaterial
@@ -136,43 +136,6 @@ const Map: FC = () => {
           metalness={0}
         />
       </mesh>
-
-      {/* Road and a few props pulled from /public/assets */}
-      <group position={[0, 0, 0]}>
-        <Model url="/assets/road.glb" position={[0, 0, 0]} />
-        {/* Fences */}
-        <Model
-          url="/assets/iron-fence-border.glb"
-          position={[-10, 0, -10]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-        <Model
-          url="/assets/iron-fence-border.glb"
-          position={[10, 0, -10]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-        <Model
-          url="/assets/iron-fence-border.glb"
-          position={[-10, 0, 10]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-        <Model
-          url="/assets/iron-fence-border.glb"
-          position={[10, 0, 10]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-
-        {/* Trees and props */}
-        <Model url="/assets/pine.glb" position={[-15, 0, -5]} />
-        <Model url="/assets/pine.glb" position={[18, 0, 8]} />
-        <Model
-          url="/assets/bench.glb"
-          position={[5, 0, -6]}
-          rotation={[0, Math.PI / 4, 0]}
-        />
-        <Model url="/assets/gravestone-wide.glb" position={[-6, 0, 6]} />
-        <Model url="/assets/lantern-candle.glb" position={[2, 0, 2]} />
-      </group>
     </group>
   );
 };
