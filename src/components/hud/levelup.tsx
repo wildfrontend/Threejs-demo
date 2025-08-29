@@ -32,6 +32,7 @@ function sampleUnique<T>(arr: T[], n: number) {
 
 const LevelUpHUD = () => {
   const paused = useGame((s) => s.paused);
+  const gameOver = useGame((s) => s.gameOver);
   const upgradePending = useGame((s) => s.upgradePending);
   const applyUpgrade = useGame((s) => s.applyUpgrade);
   const level = useGame((s) => s.level);
@@ -47,7 +48,7 @@ const LevelUpHUD = () => {
     }
   }, [upgradePending, level]);
 
-  if (!paused || upgradePending <= 0) return null;
+  if (!paused || gameOver || upgradePending <= 0) return null;
 
   const onPick = (u: Upgrade) => {
     applyUpgrade(u.key);
@@ -84,4 +85,3 @@ const LevelUpHUD = () => {
 };
 
 export default LevelUpHUD;
-

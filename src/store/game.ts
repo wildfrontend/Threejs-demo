@@ -34,6 +34,10 @@ type GameState = {
   paused: boolean;
   setPaused: (value: boolean) => void;
   togglePaused: () => void;
+  // Game lifecycle
+  gameOver: boolean;
+  resetGame: () => void;
+  runId: number; // increment to remount game scene
   // XP / Level
   level: number; // starts at 1
   xp: number; // current XP into this level
@@ -62,7 +66,13 @@ export const useGame = create<GameState>((set, get) => ({
   damage: (amount = 1) =>
     set(() => {
       const { health } = get();
-      return { health: Math.max(0, health - amount) };
+      const next = Math.max(0, health - amount);
+      const changes: Partial<GameState> = { health: next };
+      if (next <= 0) {
+        changes.paused = true;
+        changes.gameOver = true;
+      }
+      return changes as any;
     }),
   heal: (amount = 1) =>
     set(() => {
@@ -108,6 +118,35 @@ export const useGame = create<GameState>((set, get) => ({
   paused: false,
   setPaused: (value) => set(() => ({ paused: !!value })),
   togglePaused: () => set(() => ({ paused: !get().paused })),
+  // Game lifecycle
+  gameOver: false,
+  runId: 0,
+  resetGame: () =>
+    set(() => {
+      // Reset core stats and flags
+      const maxHealth = get().maxHealth;
+      const ammoCapacity = get().ammoCapacity;
+      return {
+        // core
+        health: maxHealth,
+        ammo: ammoCapacity,
+        reloading: false,
+        kills: 0,
+        paused: false,
+        gameOver: false,
+        // leveling
+        level: 1,
+        xp: 0,
+        xpToNext: xpNeededForLevel(1),
+        upgradePending: 0,
+        // upgrades reset
+        bulletDamage: 1,
+        bulletCount: 1,
+        moveSpeed: 6,
+        // remount scene consumers
+        runId: get().runId + 1,
+      } as any;
+    }),
   // Leveling
   level: 1,
   xp: 0,
