@@ -9,6 +9,7 @@ import Map from '@/components/map';
 import Player from '@/components/player';
 import Bullets from '@/components/combat/bullets';
 import CollisionRange from '@/components/indicators/collision-range';
+import Zombie from '@/components/monsters/zombie';
 
 function Sandbox() {
   return (
@@ -27,6 +28,7 @@ function Sandbox() {
         <Suspense fallback={null}>
           <Map />
           <Player />
+          <Zombie />
           <FollowCamera />
           <CollisionRange />
           <Bullets />
