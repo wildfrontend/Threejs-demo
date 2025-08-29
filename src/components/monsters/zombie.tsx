@@ -1,6 +1,7 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -9,6 +10,7 @@ import {
   HIT_BOUNCE_BACK,
   HIT_BOUNCE_PAUSE,
   BOUNCE_RETREAT_SPEED_MULTIPLIER,
+  ZOMBIE_SPEED,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -18,9 +20,10 @@ type ZombieProps = {
   name?: string;
 };
 
-const Zombie = ({ position = [5, 0, -5], speed = 2.2, name = "zombie" }: ZombieProps) => {
+const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }: ZombieProps) => {
   const group = useRef<THREE.Group>(null!);
-  const { scene: model } = useGLTF("/assets/character-zombie.glb");
+  const gltf = useGLTF("/assets/character-zombie.glb");
+  const model = useMemo(() => SkeletonUtils.clone(gltf.scene) as THREE.Group, [gltf.scene]);
   const { scene } = useThree();
 
   // Cache helpers

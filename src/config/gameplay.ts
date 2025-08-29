@@ -1,5 +1,5 @@
-export const BULLET_SPEED = 20; // units/sec
-export const BULLET_RANGE = 10; // default shooting range (units)
+export const BULLET_SPEED = 10; // units/sec
+export const BULLET_RANGE = 5; // default shooting range (units)
 export const FIRE_COOLDOWN = 0.25; // seconds between shots while firing
 export const AUTO_FIRE_INTERVAL = 2.0; // seconds between auto shots
 export const MUZZLE_OFFSET = 1.2; // forward offset from player origin
@@ -12,3 +12,5 @@ export const HIT_BOUNCE_BACK = 0.3; // monster bounce-back distance when hitting
 export const HIT_BOUNCE_PAUSE = 1.0; // seconds paused after a bounce
 export const BOUNCE_RETREAT_SPEED_MULTIPLIER = 0.4; // speed multiplier during bounce retreat phase
 export const BOUNCE_RANDOM_ANGLE = 0.4; // random angle variation for bounce direction (±radians)
+export const MAX_ZOMBIES = 3; // total concurrent zombies in the scene
+export const ZOMBIE_SPEED = 1.4; // default zombie speed (units/sec)

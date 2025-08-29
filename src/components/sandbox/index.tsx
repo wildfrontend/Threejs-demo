@@ -8,10 +8,9 @@ import * as THREE from 'three';
 import Bullets from '@/components/combat/bullets';
 import CollisionRange from '@/components/indicators/collision-range';
 import ShootRange from '@/components/indicators/shoot-range';
-import ZombieHitRange from '@/components/indicators/zombie-hit-range';
 import Map from '@/components/map';
-import Zombie from '@/components/monsters/zombie';
 import Player from '@/components/player';
+import ZombieSpawner from '../monsters/zombie-spawner';
 
 function Sandbox() {
   return (
@@ -30,7 +29,7 @@ function Sandbox() {
         <Suspense fallback={null}>
           <Map />
           <Player />
-          <Zombie />
+          <ZombieSpawner />
           <FollowCamera />
           <CollisionRange />
           <ShootRange />

@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
+
 import {
-  BULLET_SPEED,
-  BULLET_RANGE,
   AUTO_FIRE_INTERVAL,
+  BULLET_RANGE,
   BULLET_SIZE,
-  MUZZLE_OFFSET,
-  MUZZLE_HEIGHT,
+  BULLET_SPEED,
   RELOAD_TIME,
-} from "@/config/gameplay";
-import { useGame } from "@/store/game";
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 // Auto-fire only: no input dependency
 
@@ -39,13 +38,13 @@ const Bullets = () => {
   // Locate the player object once available
   useFrame(() => {
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
   });
 
   const spawnBullet = () => {
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
       if (!playerRef.current) return;
     }
 
@@ -61,20 +60,23 @@ const Bullets = () => {
 
     // Find nearest enemy (by name "zombie") and aim at it if exists
     const nearestTarget = (() => {
+      if (!(scene as any)?.traverse) return null;
       let bestPos: THREE.Vector3 | null = null;
       let bestDistSq = Infinity;
-      scene.traverse((obj) => {
-        if (!obj.name) return;
-        if (obj.name !== "zombie" && !obj.name.startsWith("zombie")) return;
-        const wpos = obj.getWorldPosition(new THREE.Vector3());
-        // Aim at the enemy using player's center height to avoid vertical mismatch
-        const target = new THREE.Vector3(wpos.x, playerCenter.y, wpos.z);
-        const d2 = start.distanceToSquared(target);
-        if (d2 < bestDistSq) {
-          bestDistSq = d2;
-          bestPos = target;
-        }
-      });
+      try {
+        scene.traverse((obj) => {
+          if (!obj?.name) return;
+          if (obj.name !== 'zombie' && !obj.name.startsWith('zombie')) return;
+          const wpos = obj.getWorldPosition(new THREE.Vector3());
+          // Aim at the enemy using player's center height to avoid vertical mismatch
+          const target = new THREE.Vector3(wpos.x, playerCenter.y, wpos.z);
+          const d2 = start.distanceToSquared(target);
+          if (d2 < bestDistSq) {
+            bestDistSq = d2;
+            bestPos = target;
+          }
+        });
+      } catch {}
       return bestPos;
     })();
 
@@ -95,7 +97,7 @@ const Bullets = () => {
 
     // Update muzzle helper to visualize spawn start position
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
     if (playerRef.current && muzzleHelperRef.current) {
       const box = new THREE.Box3().setFromObject(playerRef.current);
@@ -146,7 +148,43 @@ const Bullets = () => {
       b.traveled += step;
       b.position.addScaledVector(b.direction, step);
 
-      if (b.traveled <= BULLET_RANGE) {
+      let keep = b.traveled <= BULLET_RANGE;
+
+      // Collision against zombies: bounding-sphere test using their Box3 sphere
+      if (keep && (scene as any)?.traverse) {
+        let hit = false;
+        try {
+          scene.traverse((obj) => {
+            if (hit) return;
+            if (!obj?.name) return;
+            if (obj.name !== 'zombie' && !obj.name.startsWith('zombie')) return;
+            if (!(obj as any).visible) return;
+
+            const box = new THREE.Box3().setFromObject(obj);
+            const sphere = new THREE.Sphere();
+            box.getBoundingSphere(sphere);
+            const radius = Math.max(0.2, sphere.radius * 0.6);
+            const dist = sphere.center.distanceTo(b.position);
+            if (dist <= radius + BULLET_SIZE * 0.5) {
+              const z: any = obj as any;
+              const maxHp = z.userData?.maxHp ?? 2;
+              const curHp = z.userData?.hp ?? maxHp;
+              const nextHp = Math.max(0, curHp - 1);
+              z.userData = { ...z.userData, hp: nextHp, maxHp };
+              keep = false; // bullet consumed on hit
+              hit = true;
+              if (nextHp <= 0) {
+                // 僅標記死亡與隱藏，讓 Spawner 接手卸載/重生
+                z.userData = { ...z.userData, killed: true };
+                z.visible = false;
+                // 可在此處增加計分或掉落物觸發
+              }
+            }
+          });
+        } catch {}
+      }
+
+      if (keep) {
         // keep and write in-place
         arr[write++] = b;
       }
@@ -173,13 +211,23 @@ const Bullets = () => {
 
   return (
     <>
-      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, MAX_BULLETS]} frustumCulled={false}>
+      <instancedMesh
+        ref={imRef}
+        args={[undefined as any, undefined as any, MAX_BULLETS]}
+        frustumCulled={false}
+      >
         <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
         <meshBasicMaterial color="#fff46b" toneMapped={false} />
       </instancedMesh>
       <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
         <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
-        <meshBasicMaterial color="#ff3bd1" toneMapped={false} depthTest={false} transparent opacity={0.9} />
+        <meshBasicMaterial
+          color="#ff3bd1"
+          toneMapped={false}
+          depthTest={false}
+          transparent
+          opacity={0.9}
+        />
       </mesh>
     </>
   );
