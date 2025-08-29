@@ -30,6 +30,10 @@ type GameState = {
   kills: number;
   addKill: () => void;
   resetKills: () => void;
+  // Pause
+  paused: boolean;
+  setPaused: (value: boolean) => void;
+  togglePaused: () => void;
   // XP / Level
   level: number; // starts at 1
   xp: number; // current XP into this level
@@ -94,6 +98,10 @@ export const useGame = create<GameState>((set, get) => ({
     get().addXp(XP_PER_KILL);
   },
   resetKills: () => set(() => ({ kills: 0 })),
+  // Pause
+  paused: false,
+  setPaused: (value) => set(() => ({ paused: !!value })),
+  togglePaused: () => set(() => ({ paused: !get().paused })),
   // Leveling
   level: 1,
   xp: 0,

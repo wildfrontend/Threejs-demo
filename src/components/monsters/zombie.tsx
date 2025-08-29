@@ -44,6 +44,7 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
   }, [model]);
 
   useFrame((_, delta) => {
+    if (gameGet().paused) return;
     // Track player
     if (!playerRef.current) {
       playerRef.current = scene.getObjectByName("player") || null;

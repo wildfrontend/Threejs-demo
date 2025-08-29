@@ -4,6 +4,7 @@ import { useGLTF, useKeyboardControls } from '@react-three/drei';
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useGame } from '@/store/game';
 
 type Controls = {
   forward: boolean;
@@ -16,6 +17,7 @@ const Player = () => {
   const group = useRef<THREE.Group>(null!);
   const { scene } = useGLTF('/assets/character-digger.glb');
   const [, get] = useKeyboardControls<Controls>();
+  const gameGet = useRef(useGame.getState).current;
 
   useEffect(() => {
     if (!scene) return;
@@ -27,6 +29,7 @@ const Player = () => {
   }, [scene]);
 
   useFrame((_, delta) => {
+    if (gameGet().paused) return;
     const { forward, backward, left, right } = get();
 
     const dir = new THREE.Vector3(

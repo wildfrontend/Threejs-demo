@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 import { MAX_ZOMBIES, ZOMBIE_SPEED } from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 import Zombie from './zombie';
 
@@ -52,6 +53,7 @@ const ZombieSpawner = () => {
     }));
   });
   const nowRef = useRef(0);
+  const gameGet = useRef(useGame.getState).current;
   const tmpVec = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
@@ -71,6 +73,8 @@ const ZombieSpawner = () => {
 
   // Poll scene to detect killed/removed zombies and schedule respawn
   useFrame((_, delta) => {
+    // Pause stops respawn timers and polling
+    if (gameGet().paused) return;
     nowRef.current += delta;
 
     setSlots((prev) => {

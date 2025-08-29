@@ -92,6 +92,7 @@ const Bullets = () => {
   };
 
   useFrame((_, delta) => {
+    if (gameGet().paused) return;
     lastShotAt.current += delta;
     const store = gameGet();
 
