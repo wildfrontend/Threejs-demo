@@ -11,6 +11,10 @@ import {
   BULLET_SPEED,
   RELOAD_TIME,
   BULLET_SPREAD_DEG,
+  SKELETON_HP,
+  ZOMBIE_HP,
+  GHOST_HP,
+  VAMPIRE_HP,
 } from '@/config/gameplay';
 import { useGame } from '@/store/game';
 
@@ -118,16 +122,21 @@ const Bullets = () => {
     lastShotAt.current += delta;
     const store = gameGet();
 
-    // Update muzzle helper to visualize spawn start position
-    if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName('player') || null;
-    }
-    if (playerRef.current && muzzleHelperRef.current) {
-      const box = new THREE.Box3().setFromObject(playerRef.current);
-      const center = box.getCenter(new THREE.Vector3());
-      const start = center.clone();
-      muzzleHelperRef.current.position.copy(start);
-      muzzleHelperRef.current.visible = true;
+    // Update muzzle helper (dev only) to visualize spawn position
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev) {
+      if (!playerRef.current) {
+        playerRef.current = scene.getObjectByName('player') || null;
+      }
+      if (playerRef.current && muzzleHelperRef.current) {
+        const box = new THREE.Box3().setFromObject(playerRef.current);
+        const center = box.getCenter(new THREE.Vector3());
+        const start = center.clone();
+        muzzleHelperRef.current.position.copy(start);
+        muzzleHelperRef.current.visible = true;
+      } else if (muzzleHelperRef.current) {
+        muzzleHelperRef.current.visible = false;
+      }
     } else if (muzzleHelperRef.current) {
       muzzleHelperRef.current.visible = false;
     }
@@ -196,7 +205,17 @@ const Bullets = () => {
             const dist = sphere.center.distanceTo(b.position);
             if (dist <= radius + BULLET_SIZE * 0.5) {
               const z: any = obj as any;
-              const maxHp = z.userData?.maxHp ?? 2;
+              const name = (z.name || '').toLowerCase();
+              const defaultMax = name.startsWith('zombie') || name === 'zombie'
+                ? ZOMBIE_HP
+                : name.startsWith('skeleton') || name === 'skeleton'
+                ? SKELETON_HP
+                : name.startsWith('ghost') || name === 'ghost'
+                ? GHOST_HP
+                : name.startsWith('vampire') || name === 'vampire'
+                ? VAMPIRE_HP
+                : 2;
+              const maxHp = z.userData?.maxHp ?? defaultMax;
               const curHp = z.userData?.hp ?? maxHp;
               const dmg = gameGet().bulletDamage ?? 1;
               const nextHp = Math.max(0, curHp - dmg);
@@ -252,16 +271,18 @@ const Bullets = () => {
         <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
         <meshBasicMaterial color="#fff46b" toneMapped={false} />
       </instancedMesh>
-      <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
-        <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
-        <meshBasicMaterial
-          color="#ff3bd1"
-          toneMapped={false}
-          depthTest={false}
-          transparent
-          opacity={0.9}
-        />
-      </mesh>
+      {process.env.NODE_ENV !== 'production' && (
+        <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
+          <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
+          <meshBasicMaterial
+            color="#ff3bd1"
+            toneMapped={false}
+            depthTest={false}
+            transparent
+            opacity={0.9}
+          />
+        </mesh>
+      )}
     </>
   );
 };

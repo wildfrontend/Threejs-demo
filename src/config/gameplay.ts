@@ -13,10 +13,11 @@ export const HIT_BOUNCE_PAUSE = 1.0; // seconds paused after a bounce
 export const BOUNCE_RETREAT_SPEED_MULTIPLIER = 0.4; // speed multiplier during bounce retreat phase
 export const BOUNCE_RANDOM_ANGLE = 0.4; // random angle variation for bounce direction (±radians)
 export const MAX_ZOMBIES = 3; // total concurrent zombies in the scene
-export const ZOMBIE_SPEED = 1.4; // default zombie speed (units/sec)
-export const SKELETON_SPEED = 1.6; // default skeleton speed (units/sec)
-export const GHOST_SPEED = 1.8; // default ghost speed (units/sec)
-export const VAMPIRE_SPEED = 2.0; // default vampire speed (units/sec)
+// Monster movement speeds (units/sec)
+export const SKELETON_SPEED = 1.0;
+export const ZOMBIE_SPEED = 0.75;
+export const GHOST_SPEED = 1.0;
+export const VAMPIRE_SPEED = 1.2;
 // XP/Leveling config
 export const XP_PER_KILL = 1; // XP per zombie kill
 export const XP_BASE = 3; // XP needed for level 1->2
@@ -28,3 +29,21 @@ export const BULLET_SPREAD_DEG = 10;
 export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
 export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)
+
+// Monster stats
+export const SKELETON_HP = 2;
+export const SKELETON_ATTACK = 1;
+
+export const ZOMBIE_HP = 6;
+export const ZOMBIE_ATTACK = 2;
+
+export const GHOST_HP = 3;
+export const GHOST_ATTACK = 1;
+export const GHOST_ATTACK_RANGE = 5;
+
+export const VAMPIRE_HP = 50;
+export const VAMPIRE_ATTACK = 3;
+export const VAMPIRE_ATTACK_RANGE = 2;
+
+// Generic attack cooldown for ranged/contact (seconds)
+export const MONSTER_ATTACK_COOLDOWN = 1.0;

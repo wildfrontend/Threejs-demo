@@ -11,6 +11,10 @@ import {
   HIT_BOUNCE_PAUSE,
   BOUNCE_RETREAT_SPEED_MULTIPLIER,
   VAMPIRE_SPEED,
+  VAMPIRE_ATTACK,
+  VAMPIRE_HP,
+  VAMPIRE_ATTACK_RANGE,
+  MONSTER_ATTACK_COOLDOWN,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -33,6 +37,7 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
   const gameGet = useRef(useGame.getState).current;
   const retreatTimer = useRef(0); // seconds remaining to retreat
   const retreatDir = useRef(new THREE.Vector3()); // direction to move while retreating (backwards)
+  const atkTimer = useRef(0);
 
   useEffect(() => {
     if (!model) return;
@@ -41,6 +46,10 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       child.castShadow = true;
       child.receiveShadow = true;
     });
+    if (group.current) {
+      const g: any = group.current;
+      g.userData = { ...(g.userData || {}), hp: VAMPIRE_HP, maxHp: VAMPIRE_HP };
+    }
   }, [model]);
 
   useFrame((_, delta) => {
@@ -59,6 +68,9 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
 
     const R = gameGet().hitRadius || COLLISION_RADIUS;
 
+    // Timers
+    if (atkTimer.current > 0) atkTimer.current = Math.max(0, atkTimer.current - delta);
+
     // If retreating, move backwards for a short duration
     if (retreatTimer.current > 0) {
       const retreatSpeed = speed * BOUNCE_RETREAT_SPEED_MULTIPLIER;
@@ -68,6 +80,12 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       // keep grounded
       group.current.position.y = 0;
       return;
+    }
+
+    // Ranged (melee-extended) attack when within boss attack range
+    if (dist > 0 && dist <= VAMPIRE_ATTACK_RANGE && atkTimer.current <= 0) {
+      try { gameGet().damage?.(VAMPIRE_ATTACK); } catch {}
+      atkTimer.current = MONSTER_ATTACK_COOLDOWN;
     }
 
     // If already inside the hit-range, push just outside and start retreat
@@ -81,7 +99,7 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       retreatTimer.current = HIT_BOUNCE_PAUSE;
       // Deal contact damage to player
       try {
-        gameGet().damage?.(1);
+        gameGet().damage?.(VAMPIRE_ATTACK);
       } catch {}
       group.current.position.y = 0;
       return;
@@ -106,7 +124,7 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
         retreatTimer.current = HIT_BOUNCE_PAUSE;
         // Deal contact damage to player
         try {
-          gameGet().damage?.(1);
+          gameGet().damage?.(VAMPIRE_ATTACK);
         } catch {}
       } else {
         g.copy(candidate);
@@ -130,4 +148,3 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
 useGLTF.preload("/assets/character-vampire.glb");
 
 export default Vampire;
-

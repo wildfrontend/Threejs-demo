@@ -11,6 +11,8 @@ import {
   HIT_BOUNCE_PAUSE,
   BOUNCE_RETREAT_SPEED_MULTIPLIER,
   SKELETON_SPEED,
+  SKELETON_ATTACK,
+  SKELETON_HP,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -41,6 +43,10 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
       child.castShadow = true;
       child.receiveShadow = true;
     });
+    if (group.current) {
+      const g: any = group.current;
+      g.userData = { ...(g.userData || {}), hp: SKELETON_HP, maxHp: SKELETON_HP };
+    }
   }, [model]);
 
   useFrame((_, delta) => {
@@ -81,7 +87,7 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
       retreatTimer.current = HIT_BOUNCE_PAUSE;
       // Deal contact damage to player
       try {
-        gameGet().damage?.(1);
+        gameGet().damage?.(SKELETON_ATTACK);
       } catch {}
       group.current.position.y = 0;
       return;
@@ -106,7 +112,7 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
         retreatTimer.current = HIT_BOUNCE_PAUSE;
         // Deal contact damage to player
         try {
-          gameGet().damage?.(1);
+          gameGet().damage?.(SKELETON_ATTACK);
         } catch {}
       } else {
         g.copy(candidate);
@@ -130,4 +136,3 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
 useGLTF.preload("/assets/character-skeleton.glb");
 
 export default Skeleton;
-

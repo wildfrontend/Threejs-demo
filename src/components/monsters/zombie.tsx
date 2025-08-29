@@ -11,6 +11,8 @@ import {
   HIT_BOUNCE_PAUSE,
   BOUNCE_RETREAT_SPEED_MULTIPLIER,
   ZOMBIE_SPEED,
+  ZOMBIE_ATTACK,
+  ZOMBIE_HP,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -41,6 +43,11 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
       child.castShadow = true;
       child.receiveShadow = true;
     });
+    // Init stats on the group holder for bullets/damage systems
+    if (group.current) {
+      const g: any = group.current;
+      g.userData = { ...(g.userData || {}), hp: ZOMBIE_HP, maxHp: ZOMBIE_HP };
+    }
   }, [model]);
 
   useFrame((_, delta) => {
@@ -81,7 +88,7 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
       retreatTimer.current = HIT_BOUNCE_PAUSE;
       // Deal contact damage to player
       try {
-        gameGet().damage?.(1);
+        gameGet().damage?.(ZOMBIE_ATTACK);
       } catch {}
       group.current.position.y = 0;
       return;
@@ -107,7 +114,7 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
         retreatTimer.current = HIT_BOUNCE_PAUSE;
         // Deal contact damage to player
         try {
-          gameGet().damage?.(1);
+          gameGet().damage?.(ZOMBIE_ATTACK);
         } catch {}
       } else {
         g.copy(candidate);

@@ -11,6 +11,12 @@ import {
   HIT_BOUNCE_PAUSE,
   BOUNCE_RETREAT_SPEED_MULTIPLIER,
   GHOST_SPEED,
+  GHOST_ATTACK,
+  GHOST_HP,
+  GHOST_ATTACK_RANGE,
+  MONSTER_ATTACK_COOLDOWN,
+  BULLET_SPEED,
+  BULLET_SIZE,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -33,6 +39,11 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
   const gameGet = useRef(useGame.getState).current;
   const retreatTimer = useRef(0); // seconds remaining to retreat
   const retreatDir = useRef(new THREE.Vector3()); // direction to move while retreating (backwards)
+  const atkTimer = useRef(0);
+  const bulletsRef = useRef<{ position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]>([]);
+  const imRef = useRef<THREE.InstancedMesh>(null!);
+  const tmpObj = useMemo(() => new THREE.Object3D(), []);
+  const muzzleHelperRef = useRef<THREE.Mesh>(null!);
 
   useEffect(() => {
     if (!model) return;
@@ -41,6 +52,10 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       child.castShadow = true;
       child.receiveShadow = true;
     });
+    if (group.current) {
+      const g: any = group.current;
+      g.userData = { ...(g.userData || {}), hp: GHOST_HP, maxHp: GHOST_HP };
+    }
   }, [model]);
 
   useFrame((_, delta) => {
@@ -58,6 +73,11 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     const dist = toPlayer.length();
 
     const R = gameGet().hitRadius || COLLISION_RADIUS;
+    const attackR = GHOST_ATTACK_RANGE;
+    const holdEps = 0.2;
+
+    // Timers
+    if (atkTimer.current > 0) atkTimer.current = Math.max(0, atkTimer.current - delta);
 
     // If retreating, move backwards for a short duration
     if (retreatTimer.current > 0) {
@@ -68,6 +88,34 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       // keep grounded
       group.current.position.y = 0;
       return;
+    }
+
+    // Compute ghost model center as the muzzle start
+    let start = g.clone();
+    try {
+      const box = new THREE.Box3().setFromObject(group.current);
+      start = box.getCenter(new THREE.Vector3());
+    } catch {}
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (muzzleHelperRef.current) {
+      if (isDev) {
+        const local = start.clone();
+        // convert world center to group's local space so marker stays attached on ghost
+        try { group.current.worldToLocal(local); } catch {}
+        muzzleHelperRef.current.position.copy(local);
+        muzzleHelperRef.current.visible = true;
+      } else {
+        muzzleHelperRef.current.visible = false;
+      }
+    }
+
+    // Ranged attack when within attack range
+    if (dist > 0 && dist <= attackR && atkTimer.current <= 0) {
+      // Spawn a ghost bullet toward the player from center
+      const target = p.clone();
+      const dirCenter = target.clone().sub(start).setY(0).normalize();
+      bulletsRef.current.push({ position: start.clone(), direction: dirCenter, traveled: 0 });
+      atkTimer.current = MONSTER_ATTACK_COOLDOWN;
     }
 
     // If already inside the hit-range, push just outside and start retreat
@@ -81,53 +129,98 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       retreatTimer.current = HIT_BOUNCE_PAUSE;
       // Deal contact damage to player
       try {
-        gameGet().damage?.(1);
+        gameGet().damage?.(GHOST_ATTACK);
       } catch {}
       group.current.position.y = 0;
       return;
     }
 
+    // Maintain distance: move toward if too far, move away if too close, else hold
     if (dist > 1e-4) {
-      // Try to move towards player
-      const dir = toPlayer.clone().normalize();
+      const dirToPlayer = toPlayer.clone().normalize();
       const step = speed * delta;
-      const candidate = g.clone().addScaledVector(dir, step);
-      const candToPlayer = p.clone().sub(candidate).setY(0);
-      const candDist = candToPlayer.length();
-
-      if (candDist < R) {
-        // Push just outside the border and start retreating backwards
-        const outward = candidate.clone().sub(p).setY(0);
-        if (outward.lengthSq() < 1e-6) outward.set(1, 0, 0);
-        outward.normalize();
-        const newPos = p.clone().addScaledVector(outward, R + HIT_BOUNCE_BACK);
-        g.copy(newPos);
-        retreatDir.current.copy(outward);
-        retreatTimer.current = HIT_BOUNCE_PAUSE;
-        // Deal contact damage to player
-        try {
-          gameGet().damage?.(1);
-        } catch {}
-      } else {
+      let moved = false;
+      if (dist > attackR + holdEps) {
+        // too far, approach
+        const candidate = g.clone().addScaledVector(dirToPlayer, step);
         g.copy(candidate);
+        moved = true;
+      } else if (dist < attackR - holdEps) {
+        // too close, hold position (do not back off)
+        // Intentionally no movement here
       }
-
-      // face towards player only when not retreating
-      const yaw = Math.atan2(dir.x, dir.z);
+      // Face the player
+      const yaw = Math.atan2(dirToPlayer.x, dirToPlayer.z);
       group.current.rotation.y = yaw;
     }
     // Keep grounded
     group.current.position.y = 0;
+
+    // Update ghost bullets
+    if (imRef.current) {
+      const arr = bulletsRef.current;
+      let write = 0;
+      const len = arr.length;
+      const speedB = BULLET_SPEED;
+      const rangeB = attackR; // bullets travel up to attack range
+      for (let read = 0; read < len; read++) {
+        const b = arr[read];
+        const stepB = speedB * delta;
+        b.traveled += stepB;
+        b.position.addScaledVector(b.direction, stepB);
+
+        let keep = b.traveled <= rangeB;
+
+        // Collision vs player hit radius
+        if (keep) {
+          const playerPos = p; // already computed
+          const hitR = R;
+          const d = playerPos.distanceTo(b.position);
+          if (d <= hitR + BULLET_SIZE * 0.5) {
+            try { gameGet().damage?.(GHOST_ATTACK); } catch {}
+            keep = false;
+          }
+        }
+        if (keep) arr[write++] = b;
+      }
+      if (write !== len) arr.length = write;
+
+      // render instanced bullets
+      const im = imRef.current;
+      const count = arr.length;
+      im.count = count as unknown as number;
+      for (let i = 0; i < count; i++) {
+        const b = arr[i];
+        tmpObj.position.copy(b.position);
+        tmpObj.rotation.set(0, 0, 0);
+        tmpObj.scale.setScalar(1);
+        tmpObj.updateMatrix();
+        im.setMatrixAt(i, tmpObj.matrix);
+      }
+      im.instanceMatrix.needsUpdate = true;
+    }
   });
 
   return (
-    <group ref={group} position={position} name={name}>
-      <primitive object={model} />
-    </group>
+    <>
+      <group ref={group} position={position} name={name}>
+        <primitive object={model} />
+        {process.env.NODE_ENV !== 'production' && (
+          <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
+            <sphereGeometry args={[BULLET_SIZE * 1.1, 8, 8]} />
+            <meshBasicMaterial color="#00e5ff" toneMapped={false} depthTest={false} transparent opacity={0.9} />
+          </mesh>
+        )}
+      </group>
+      {/* Ghost bullets rendered in world space (sibling of ghost) */}
+      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, 128]} frustumCulled={false}>
+        <sphereGeometry args={[BULLET_SIZE * 0.9, 10, 10]} />
+        <meshBasicMaterial color="#86e0ff" toneMapped={false} />
+      </instancedMesh>
+    </>
   );
 };
 
 useGLTF.preload("/assets/character-ghost.glb");
 
 export default Ghost;
-
