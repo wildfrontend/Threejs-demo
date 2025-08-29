@@ -29,6 +29,7 @@ const Bullets = () => {
   const imRef = useRef<THREE.InstancedMesh>(null!);
   const bulletsRef = useRef<Bullet[]>([]);
   const playerRef = useRef<THREE.Object3D | null>(null);
+  const muzzleHelperRef = useRef<THREE.Mesh>(null!);
   const lastShotAt = useRef(0);
   const gameGet = useRef(useGame.getState).current;
   const tmpObj = useMemo(() => new THREE.Object3D(), []);
@@ -53,14 +54,37 @@ const Bullets = () => {
     const q = playerRef.current.getWorldQuaternion(new THREE.Quaternion());
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q).normalize();
 
-    const start = p
-      .clone()
-      .add(forward.clone().multiplyScalar(MUZZLE_OFFSET))
-      .add(new THREE.Vector3(0, MUZZLE_HEIGHT, 0));
+    // Compute player model center as the muzzle start
+    const playerBox = new THREE.Box3().setFromObject(playerRef.current);
+    const playerCenter = playerBox.getCenter(new THREE.Vector3());
+    const start = playerCenter.clone();
+
+    // Find nearest enemy (by name "zombie") and aim at it if exists
+    const nearestTarget = (() => {
+      let bestPos: THREE.Vector3 | null = null;
+      let bestDistSq = Infinity;
+      scene.traverse((obj) => {
+        if (!obj.name) return;
+        if (obj.name !== "zombie" && !obj.name.startsWith("zombie")) return;
+        const wpos = obj.getWorldPosition(new THREE.Vector3());
+        // Aim at the enemy using player's center height to avoid vertical mismatch
+        const target = new THREE.Vector3(wpos.x, playerCenter.y, wpos.z);
+        const d2 = start.distanceToSquared(target);
+        if (d2 < bestDistSq) {
+          bestDistSq = d2;
+          bestPos = target;
+        }
+      });
+      return bestPos;
+    })();
+
+    const dir = nearestTarget
+      ? new THREE.Vector3().subVectors(nearestTarget, start).normalize()
+      : forward.clone();
 
     bulletsRef.current.push({
       position: start,
-      direction: forward,
+      direction: dir,
       traveled: 0,
     });
   };
@@ -68,6 +92,20 @@ const Bullets = () => {
   useFrame((_, delta) => {
     lastShotAt.current += delta;
     const store = gameGet();
+
+    // Update muzzle helper to visualize spawn start position
+    if (!playerRef.current) {
+      playerRef.current = scene.getObjectByName("player") || null;
+    }
+    if (playerRef.current && muzzleHelperRef.current) {
+      const box = new THREE.Box3().setFromObject(playerRef.current);
+      const center = box.getCenter(new THREE.Vector3());
+      const start = center.clone();
+      muzzleHelperRef.current.position.copy(start);
+      muzzleHelperRef.current.visible = true;
+    } else if (muzzleHelperRef.current) {
+      muzzleHelperRef.current.visible = false;
+    }
 
     // Auto fire every AUTO_FIRE_INTERVAL seconds when not reloading
     if (!store.reloading && lastShotAt.current >= AUTO_FIRE_INTERVAL) {
@@ -134,10 +172,16 @@ const Bullets = () => {
   useEffect(() => () => void (bulletsRef.current = []), []);
 
   return (
-    <instancedMesh ref={imRef} args={[undefined as any, undefined as any, MAX_BULLETS]} frustumCulled={false}>
-      <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
-      <meshBasicMaterial color="#fff46b" toneMapped={false} />
-    </instancedMesh>
+    <>
+      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, MAX_BULLETS]} frustumCulled={false}>
+        <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
+        <meshBasicMaterial color="#fff46b" toneMapped={false} />
+      </instancedMesh>
+      <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
+        <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
+        <meshBasicMaterial color="#ff3bd1" toneMapped={false} depthTest={false} transparent opacity={0.9} />
+      </mesh>
+    </>
   );
 };
 
