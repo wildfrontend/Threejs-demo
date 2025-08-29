@@ -15,6 +15,9 @@ import {
   VAMPIRE_HP,
   VAMPIRE_ATTACK_RANGE,
   MONSTER_ATTACK_COOLDOWN,
+  BULLET_SPEED,
+  BULLET_SIZE,
+  VAMPIRE_BULLET_DAMAGE,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
@@ -38,6 +41,9 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
   const retreatTimer = useRef(0); // seconds remaining to retreat
   const retreatDir = useRef(new THREE.Vector3()); // direction to move while retreating (backwards)
   const atkTimer = useRef(0);
+  const bulletsRef = useRef<{ position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]>([]);
+  const imRef = useRef<THREE.InstancedMesh>(null!);
+  const tmpObj = useMemo(() => new THREE.Object3D(), []);
 
   useEffect(() => {
     if (!model) return;
@@ -82,9 +88,18 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       return;
     }
 
-    // Ranged (melee-extended) attack when within boss attack range
-    if (dist > 0 && dist <= VAMPIRE_ATTACK_RANGE && atkTimer.current <= 0) {
-      try { gameGet().damage?.(VAMPIRE_ATTACK); } catch {}
+    // Compute vampire model center as the muzzle start (world space)
+    let start = g.clone();
+    try {
+      const box = new THREE.Box3().setFromObject(group.current);
+      start = box.getCenter(new THREE.Vector3());
+    } catch {}
+
+    // Ranged attack: fire projectile toward player when within attack range (avoid overlapping)
+    if (dist > R && dist <= VAMPIRE_ATTACK_RANGE && atkTimer.current <= 0) {
+      const target = p.clone();
+      const dirCenter = target.clone().sub(start).setY(0).normalize();
+      bulletsRef.current.push({ position: start.clone(), direction: dirCenter, traveled: 0 });
       atkTimer.current = MONSTER_ATTACK_COOLDOWN;
     }
 
@@ -97,10 +112,11 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       g.copy(p.clone().addScaledVector(away, R + HIT_BOUNCE_BACK));
       retreatDir.current.copy(away); // backwards relative to the approach
       retreatTimer.current = HIT_BOUNCE_PAUSE;
-      // Deal contact damage to player
+      // Deal contact damage to player and throttle ranged cooldown
       try {
         gameGet().damage?.(VAMPIRE_ATTACK);
       } catch {}
+      atkTimer.current = Math.max(atkTimer.current, MONSTER_ATTACK_COOLDOWN);
       group.current.position.y = 0;
       return;
     }
@@ -122,10 +138,11 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
         g.copy(newPos);
         retreatDir.current.copy(outward);
         retreatTimer.current = HIT_BOUNCE_PAUSE;
-        // Deal contact damage to player
+        // Deal contact damage to player and throttle ranged cooldown
         try {
           gameGet().damage?.(VAMPIRE_ATTACK);
         } catch {}
+        atkTimer.current = Math.max(atkTimer.current, MONSTER_ATTACK_COOLDOWN);
       } else {
         g.copy(candidate);
       }
@@ -136,12 +153,64 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     }
     // Keep grounded
     group.current.position.y = 0;
+
+    // Update vampire bullets (world space)
+    if (imRef.current) {
+      const arr = bulletsRef.current;
+      let write = 0;
+      const len = arr.length;
+      const speedB = BULLET_SPEED;
+      const rangeB = VAMPIRE_ATTACK_RANGE;
+      for (let read = 0; read < len; read++) {
+        const b = arr[read];
+        const stepB = speedB * delta;
+        b.traveled += stepB;
+        b.position.addScaledVector(b.direction, stepB);
+
+        let keep = b.traveled <= rangeB;
+
+        // Collision vs player hit radius (XZ plane)
+        if (keep) {
+          const playerPos = p; // world position
+          const hitR = R;
+          const dx = playerPos.x - b.position.x;
+          const dz = playerPos.z - b.position.z;
+          const dXZ = Math.hypot(dx, dz);
+          if (dXZ <= hitR + BULLET_SIZE * 0.5) {
+            try { gameGet().damage?.(VAMPIRE_BULLET_DAMAGE); } catch {}
+            keep = false;
+          }
+        }
+        if (keep) arr[write++] = b;
+      }
+      if (write !== len) arr.length = write;
+
+      // render instanced bullets
+      const im = imRef.current;
+      const count = arr.length;
+      im.count = count as unknown as number;
+      for (let i = 0; i < count; i++) {
+        const b = arr[i];
+        tmpObj.position.copy(b.position);
+        tmpObj.rotation.set(0, 0, 0);
+        tmpObj.scale.setScalar(1);
+        tmpObj.updateMatrix();
+        im.setMatrixAt(i, tmpObj.matrix);
+      }
+      im.instanceMatrix.needsUpdate = true;
+    }
   });
 
   return (
-    <group ref={group} position={position} name={name}>
-      <primitive object={model} />
-    </group>
+    <>
+      <group ref={group} position={position} name={name}>
+        <primitive object={model} />
+      </group>
+      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, 128]} frustumCulled={false}>
+        <sphereGeometry args={[BULLET_SIZE * 1.0, 12, 12]} />
+        <meshBasicMaterial color="#ff4d4d" toneMapped={false} />
+      </instancedMesh>
+    </>
   );
 };
 

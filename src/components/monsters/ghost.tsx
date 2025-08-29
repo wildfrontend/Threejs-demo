@@ -109,8 +109,8 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       }
     }
 
-    // Ranged attack when within attack range
-    if (dist > 0 && dist <= attackR && atkTimer.current <= 0) {
+    // Ranged attack when within attack range (do not fire when overlapping collision radius)
+    if (dist > R && dist <= attackR && atkTimer.current <= 0) {
       // Spawn a ghost bullet toward the player from center
       const target = p.clone();
       const dirCenter = target.clone().sub(start).setY(0).normalize();
@@ -127,10 +127,11 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       g.copy(p.clone().addScaledVector(away, R + HIT_BOUNCE_BACK));
       retreatDir.current.copy(away); // backwards relative to the approach
       retreatTimer.current = HIT_BOUNCE_PAUSE;
-      // Deal contact damage to player
+      // Deal contact damage to player and throttle ranged cooldown
       try {
         gameGet().damage?.(GHOST_ATTACK);
       } catch {}
+      atkTimer.current = Math.max(atkTimer.current, MONSTER_ATTACK_COOLDOWN);
       group.current.position.y = 0;
       return;
     }
@@ -171,12 +172,14 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
 
         let keep = b.traveled <= rangeB;
 
-        // Collision vs player hit radius
+        // Collision vs player hit radius (XZ plane)
         if (keep) {
-          const playerPos = p; // already computed
+          const playerPos = p; // already computed (world)
           const hitR = R;
-          const d = playerPos.distanceTo(b.position);
-          if (d <= hitR + BULLET_SIZE * 0.5) {
+          const dx = playerPos.x - b.position.x;
+          const dz = playerPos.z - b.position.z;
+          const dXZ = Math.hypot(dx, dz);
+          if (dXZ <= hitR + BULLET_SIZE * 0.5) {
             try { gameGet().damage?.(GHOST_ATTACK); } catch {}
             keep = false;
           }

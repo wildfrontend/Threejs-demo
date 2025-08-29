@@ -44,6 +44,7 @@ export const GHOST_ATTACK_RANGE = 5;
 export const VAMPIRE_HP = 50;
 export const VAMPIRE_ATTACK = 3;
 export const VAMPIRE_ATTACK_RANGE = 2;
+export const VAMPIRE_BULLET_DAMAGE = 1;
 
 // Generic attack cooldown for ranged/contact (seconds)
 export const MONSTER_ATTACK_COOLDOWN = 1.0;
