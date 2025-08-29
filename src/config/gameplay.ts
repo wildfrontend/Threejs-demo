@@ -14,6 +14,9 @@ export const BOUNCE_RETREAT_SPEED_MULTIPLIER = 0.4; // speed multiplier during b
 export const BOUNCE_RANDOM_ANGLE = 0.4; // random angle variation for bounce direction (±radians)
 export const MAX_ZOMBIES = 3; // total concurrent zombies in the scene
 export const ZOMBIE_SPEED = 1.4; // default zombie speed (units/sec)
+export const SKELETON_SPEED = 1.6; // default skeleton speed (units/sec)
+export const GHOST_SPEED = 1.8; // default ghost speed (units/sec)
+export const VAMPIRE_SPEED = 2.0; // default vampire speed (units/sec)
 // XP/Leveling config
 export const XP_PER_KILL = 1; // XP per zombie kill
 export const XP_BASE = 3; // XP needed for level 1->2
@@ -21,3 +24,7 @@ export const XP_STEP = 2; // Additional XP needed added per next level
 export const MAX_LEVEL = 15; // maximum achievable level
 // Shooting fan spread (degrees between adjacent bullets)
 export const BULLET_SPREAD_DEG = 10;
+// Player move speed
+export const MOVE_SPEED_BASE = 4.5; // base move speed
+export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
+export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)

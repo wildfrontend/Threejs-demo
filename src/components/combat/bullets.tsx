@@ -67,7 +67,13 @@ const Bullets = () => {
       try {
         scene.traverse((obj) => {
           if (!obj?.name) return;
-          if (obj.name !== 'zombie' && !obj.name.startsWith('zombie')) return;
+          const n = obj.name.toLowerCase();
+          const isMonster =
+            n === 'zombie' || n.startsWith('zombie') ||
+            n === 'skeleton' || n.startsWith('skeleton') ||
+            n === 'ghost' || n.startsWith('ghost') ||
+            n === 'vampire' || n.startsWith('vampire');
+          if (!isMonster) return;
           const wpos = obj.getWorldPosition(new THREE.Vector3());
           // Aim at the enemy using player's center height to avoid vertical mismatch
           const target = new THREE.Vector3(wpos.x, playerCenter.y, wpos.z);
@@ -174,7 +180,13 @@ const Bullets = () => {
           scene.traverse((obj) => {
             if (hit) return;
             if (!obj?.name) return;
-            if (obj.name !== 'zombie' && !obj.name.startsWith('zombie')) return;
+            const n2 = obj.name.toLowerCase();
+            const isMonster2 =
+              n2 === 'zombie' || n2.startsWith('zombie') ||
+              n2 === 'skeleton' || n2.startsWith('skeleton') ||
+              n2 === 'ghost' || n2.startsWith('ghost') ||
+              n2 === 'vampire' || n2.startsWith('vampire');
+            if (!isMonster2) return;
             if (!(obj as any).visible) return;
 
             const box = new THREE.Box3().setFromObject(obj);

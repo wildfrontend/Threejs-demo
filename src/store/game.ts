@@ -8,6 +8,8 @@ import {
   XP_PER_KILL,
   XP_STEP,
   MAX_LEVEL,
+  MOVE_SPEED_BASE,
+  MOVE_SPEED_STEP,
 } from "@/config/gameplay";
 
 type GameState = {
@@ -50,6 +52,7 @@ type GameState = {
   bulletDamage: number;
   bulletCount: number;
   moveSpeed: number;
+  moveSpeedUpgrades: number;
 };
 
 const xpNeededForLevel = (level: number) => XP_BASE + (level - 1) * XP_STEP;
@@ -142,7 +145,8 @@ export const useGame = create<GameState>((set, get) => ({
         // upgrades reset
         bulletDamage: 1,
         bulletCount: 1,
-        moveSpeed: 6,
+        moveSpeedUpgrades: 0,
+        moveSpeed: MOVE_SPEED_BASE,
         // remount scene consumers
         runId: get().runId + 1,
       } as any;
@@ -155,7 +159,8 @@ export const useGame = create<GameState>((set, get) => ({
   // Upgradeable stats defaults
   bulletDamage: 1,
   bulletCount: 1,
-  moveSpeed: 6,
+  moveSpeedUpgrades: 0,
+  moveSpeed: MOVE_SPEED_BASE,
   addXp: (amount = 1) => {
     let { xp, level, xpToNext } = get();
     const prevLevel = level;
@@ -201,7 +206,19 @@ export const useGame = create<GameState>((set, get) => ({
           bulletCount = Math.max(1, (bulletCount ?? 1) + 1);
           break;
         case "moveSpeed":
-          moveSpeed = (moveSpeed ?? 6) * 1.1;
+          // Use formula: base * (1 + step * count)
+          const newCount = (s as any).moveSpeedUpgrades + 1;
+          moveSpeed = MOVE_SPEED_BASE * (1 + MOVE_SPEED_STEP * newCount);
+          return {
+            maxHealth,
+            health,
+            bulletDamage,
+            bulletCount,
+            moveSpeed,
+            moveSpeedUpgrades: newCount,
+            upgradePending: Math.max(0, (upgradePending ?? 0) - 1),
+            paused: upgradePending - 1 === 0 ? false : paused,
+          } as any;
           break;
       }
       upgradePending = Math.max(0, (upgradePending ?? 0) - 1);
