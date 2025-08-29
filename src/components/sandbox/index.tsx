@@ -5,12 +5,13 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
-import Map from '@/components/map';
-import Player from '@/components/player';
 import Bullets from '@/components/combat/bullets';
 import CollisionRange from '@/components/indicators/collision-range';
-import Zombie from '@/components/monsters/zombie';
 import ShootRange from '@/components/indicators/shoot-range';
+import ZombieHitRange from '@/components/indicators/zombie-hit-range';
+import Map from '@/components/map';
+import Zombie from '@/components/monsters/zombie';
+import Player from '@/components/player';
 
 function Sandbox() {
   return (

@@ -6,3 +6,7 @@ export const MUZZLE_HEIGHT = 1.0; // y offset when spawning bullets
 export const AMMO_CAPACITY = 5; // total bullets available
 export const RELOAD_TIME = 3; // seconds to auto-reload
 export const COLLISION_RADIUS = 1; // visualized player collision/aggro radius (tight)
+export const HIT_BOUNCE_BACK = 0.3; // monster bounce-back distance when hitting hit-range (closer)
+export const HIT_BOUNCE_PAUSE = 1.0; // seconds paused after a bounce
+export const BOUNCE_RETREAT_SPEED_MULTIPLIER = 0.4; // speed multiplier during bounce retreat phase
+export const BOUNCE_RANDOM_ANGLE = 0.4; // random angle variation for bounce direction (±radians)

@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { AMMO_CAPACITY } from "@/config/gameplay";
+import { AMMO_CAPACITY, COLLISION_RADIUS } from "@/config/gameplay";
 
 type GameState = {
   maxHealth: number;
@@ -18,6 +18,8 @@ type GameState = {
   reloading: boolean;
   setReloading: (value: boolean) => void;
   startReload: () => void;
+  hitRadius: number;
+  setHitRadius: (value: number) => void;
 };
 
 export const useGame = create<GameState>((set, get) => ({
@@ -65,4 +67,6 @@ export const useGame = create<GameState>((set, get) => ({
   reloading: false,
   setReloading: (value) => set(() => ({ reloading: value })),
   startReload: () => set(() => ({ reloading: true })),
+  hitRadius: COLLISION_RADIUS,
+  setHitRadius: (value) => set(() => ({ hitRadius: Math.max(0.1, value) })),
 }));

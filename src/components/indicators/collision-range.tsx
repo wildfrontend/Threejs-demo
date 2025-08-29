@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { COLLISION_RADIUS } from "@/config/gameplay";
+import { useGame } from "@/store/game";
 
 const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
   const { scene } = useThree();
@@ -12,6 +13,7 @@ const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const [computedRadius, setComputedRadius] = useState<number | null>(null);
   const hasComputedRef = useRef(false);
+  const gameGet = useRef(useGame.getState).current;
 
   useFrame(() => {
     if (!playerRef.current) {
@@ -26,6 +28,10 @@ const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
       box.getBoundingSphere(sphere);
       const tight = Math.max(0.3, sphere.radius * 0.5);
       setComputedRadius(tight);
+      // Share radius with the store so enemies can use the same boundary
+      try {
+        gameGet().setHitRadius?.(tight);
+      } catch {}
       hasComputedRef.current = true;
     }
     const p = playerRef.current.getWorldPosition(tmp.set(0, 0, 0));
