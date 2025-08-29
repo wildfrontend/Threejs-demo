@@ -14,3 +14,7 @@ export const BOUNCE_RETREAT_SPEED_MULTIPLIER = 0.4; // speed multiplier during b
 export const BOUNCE_RANDOM_ANGLE = 0.4; // random angle variation for bounce direction (±radians)
 export const MAX_ZOMBIES = 3; // total concurrent zombies in the scene
 export const ZOMBIE_SPEED = 1.4; // default zombie speed (units/sec)
+// XP/Leveling config
+export const XP_PER_KILL = 1; // XP per zombie kill
+export const XP_BASE = 3; // XP needed for level 1->2
+export const XP_STEP = 2; // Additional XP needed added per next level

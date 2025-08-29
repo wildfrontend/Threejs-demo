@@ -1,7 +1,13 @@
 "use client";
 
 import { create } from "zustand";
-import { AMMO_CAPACITY, COLLISION_RADIUS } from "@/config/gameplay";
+import {
+  AMMO_CAPACITY,
+  COLLISION_RADIUS,
+  XP_BASE,
+  XP_PER_KILL,
+  XP_STEP,
+} from "@/config/gameplay";
 
 type GameState = {
   maxHealth: number;
@@ -23,7 +29,15 @@ type GameState = {
   kills: number;
   addKill: () => void;
   resetKills: () => void;
+  // XP / Level
+  level: number; // starts at 1
+  xp: number; // current XP into this level
+  xpToNext: number; // XP needed to reach next level
+  addXp: (amount?: number) => void;
+  resetXp: () => void;
 };
+
+const xpNeededForLevel = (level: number) => XP_BASE + (level - 1) * XP_STEP;
 
 export const useGame = create<GameState>((set, get) => ({
   maxHealth: 4,
@@ -73,6 +87,27 @@ export const useGame = create<GameState>((set, get) => ({
   hitRadius: COLLISION_RADIUS,
   setHitRadius: (value) => set(() => ({ hitRadius: Math.max(0.1, value) })),
   kills: 0,
-  addKill: () => set(() => ({ kills: get().kills + 1 })),
+  addKill: () => {
+    set(() => ({ kills: get().kills + 1 }));
+    // grant XP on kill
+    get().addXp(XP_PER_KILL);
+  },
   resetKills: () => set(() => ({ kills: 0 })),
+  // Leveling
+  level: 1,
+  xp: 0,
+  xpToNext: xpNeededForLevel(1),
+  addXp: (amount = 1) =>
+    set(() => {
+      let { xp, level, xpToNext } = get();
+      xp += amount;
+      // handle multi-level-ups if large XP awarded
+      while (xp >= xpToNext) {
+        xp -= xpToNext;
+        level += 1;
+        xpToNext = xpNeededForLevel(level);
+      }
+      return { xp, level, xpToNext };
+    }),
+  resetXp: () => set(() => ({ level: 1, xp: 0, xpToNext: xpNeededForLevel(1) })),
 }));
