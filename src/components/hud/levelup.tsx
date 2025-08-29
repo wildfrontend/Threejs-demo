@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useGame } from "@/store/game";
-import { MOVE_SPEED_BASE, BASE_MAX_HEALTH } from "@/config/gameplay";
+import { MOVE_SPEED_BASE, BASE_MAX_HEALTH, BASE_AMMO_CAPACITY } from "@/config/gameplay";
 
 type Upgrade = {
-  key: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed";
+  key: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed" | "ammoCapacity";
   title: string;
   desc: string;
 };
@@ -15,6 +15,7 @@ const ALL_UPGRADES: Upgrade[] = [
   { key: "bulletDamage", title: "子彈更痛", desc: "子彈傷害 +1" },
   { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散" },
   { key: "moveSpeed", title: "移動更快", desc: "移動速度 +10%" },
+  { key: "ammoCapacity", title: "更多彈藥", desc: "彈藥容量 +1（並回滿）" },
 ];
 
 function sampleUnique<T>(arr: T[], n: number) {
@@ -42,6 +43,7 @@ const LevelUpHUD = () => {
   const bulletCount = useGame((s) => s.bulletCount);
   const moveSpeed = useGame((s) => s.moveSpeed);
   const moveSpeedUpgrades = useGame((s) => s.moveSpeedUpgrades);
+  const ammoCapacity = useGame((s) => s.ammoCapacity);
 
   const [choices, setChoices] = useState<Upgrade[]>([]);
 
@@ -95,6 +97,10 @@ const LevelUpHUD = () => {
               </span>
             </span>
           </div>
+          <div className="rounded-md bg-white/5 px-3 py-2 flex items-center justify-between">
+            <span className="text-white/80">彈藥容量</span>
+            <span className="text-white font-mono">{ammoCapacity}</span>
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
           {choices.map((c) => {
@@ -105,6 +111,8 @@ const LevelUpHUD = () => {
                 ? Math.max(1, bulletDamage)
                 : c.key === "bulletCount"
                 ? Math.max(1, bulletCount)
+                : c.key === "ammoCapacity"
+                ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
                 : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
             return (
               <button

@@ -47,7 +47,7 @@ type GameState = {
   addXp: (amount?: number) => void;
   resetXp: () => void;
   upgradePending: number; // number of upgrade choices to make
-  applyUpgrade: (kind: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed") => void;
+  applyUpgrade: (kind: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed" | "ammoCapacity") => void;
   // Upgradeable stats
   bulletDamage: number;
   bulletCount: number;
@@ -192,7 +192,7 @@ export const useGame = create<GameState>((set, get) => ({
   applyUpgrade: (kind) =>
     set(() => {
       const s = get();
-      let { maxHealth, health, bulletDamage, bulletCount, moveSpeed, upgradePending, paused } = s as any;
+      let { maxHealth, health, bulletDamage, bulletCount, moveSpeed, ammoCapacity, ammo, upgradePending, paused } = s as any;
       switch (kind) {
         case "maxHealth":
           maxHealth = Math.max(1, (maxHealth ?? 1) + 1);
@@ -204,6 +204,11 @@ export const useGame = create<GameState>((set, get) => ({
           break;
         case "bulletCount":
           bulletCount = Math.max(1, (bulletCount ?? 1) + 1);
+          break;
+        case "ammoCapacity":
+          ammoCapacity = Math.max(1, (ammoCapacity ?? 1) + 1);
+          // Refill to the new capacity when upgrading ammo size
+          ammo = ammoCapacity;
           break;
         case "moveSpeed":
           // Use formula: base * (1 + step * count)
@@ -223,6 +228,6 @@ export const useGame = create<GameState>((set, get) => ({
       }
       upgradePending = Math.max(0, (upgradePending ?? 0) - 1);
       if (upgradePending === 0 && paused) paused = false;
-      return { maxHealth, health, bulletDamage, bulletCount, moveSpeed, upgradePending, paused };
+      return { maxHealth, health, bulletDamage, bulletCount, moveSpeed, ammoCapacity, ammo, upgradePending, paused };
     }),
 }));

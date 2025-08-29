@@ -29,6 +29,7 @@ export const BULLET_SPREAD_DEG = 10;
 export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
 export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)
+export const BASE_AMMO_CAPACITY = AMMO_CAPACITY; // for Lv display of ammo upgrade
 // Enemy projectile speeds
 export const GHOST_BULLET_SPEED = 2; // much slower for clearer effect
 
