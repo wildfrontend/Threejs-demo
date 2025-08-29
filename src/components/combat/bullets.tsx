@@ -15,6 +15,7 @@ import {
   ZOMBIE_HP,
   GHOST_HP,
   VAMPIRE_HP,
+  FULL_CIRCLE_BULLETS,
 } from '@/config/gameplay';
 import { useGame } from '@/store/game';
 
@@ -104,7 +105,15 @@ const Bullets = () => {
     const makeDirFromYaw = (angle: number) =>
       new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize();
 
-    if (count === 1) {
+    if (count >= 5) {
+      // Full 360° radial at max level
+      const N = FULL_CIRCLE_BULLETS;
+      for (let i = 0; i < N; i++) {
+        const angle = (i / N) * Math.PI * 2;
+        const dir = makeDirFromYaw(angle);
+        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0 });
+      }
+    } else if (count === 1) {
       bulletsRef.current.push({ position: start, direction: dirCenter, traveled: 0 });
     } else {
       const half = (count - 1) / 2;

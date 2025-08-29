@@ -16,11 +16,11 @@ function Sandbox() {
   return (
     <KeyboardControls
       map={[
-        { name: 'forward', keys: ['w', 'ArrowUp'] },
-        { name: 'backward', keys: ['s', 'ArrowDown'] },
-        { name: 'left', keys: ['a', 'ArrowLeft'] },
-        { name: 'right', keys: ['d', 'ArrowRight'] },
-        { name: 'shoot', keys: [' ', 'Space', 'Enter'] },
+        { name: 'forward', keys: ['KeyW', 'ArrowUp'] },
+        { name: 'backward', keys: ['KeyS', 'ArrowDown'] },
+        { name: 'left', keys: ['KeyA', 'ArrowLeft'] },
+        { name: 'right', keys: ['KeyD', 'ArrowRight'] },
+        { name: 'shoot', keys: ['Space', 'Enter'] },
       ]}
     >
       <Canvas camera={{ position: [0, 14, 0], fov: 45 }} shadows>

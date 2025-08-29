@@ -25,6 +25,7 @@ export const XP_STEP = 2; // Additional XP needed added per next level
 export const MAX_LEVEL = 15; // maximum achievable level
 // Shooting fan spread (degrees between adjacent bullets)
 export const BULLET_SPREAD_DEG = 10;
+export const FULL_CIRCLE_BULLETS = 16; // bullets fired in 360° at max scatter level
 // Player move speed
 export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade

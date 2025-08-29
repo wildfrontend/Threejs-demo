@@ -13,7 +13,7 @@ type Upgrade = {
 const ALL_UPGRADES: Upgrade[] = [
   { key: "maxHealth", title: "增加一顆心", desc: "最大生命值 +1（LV5：上限×2，並回滿）" },
   { key: "bulletDamage", title: "子彈更痛", desc: "子彈傷害 +1（LV5：子彈可穿透）" },
-  { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散（LV5：達上限）" },
+  { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散（LV5：360° 射擊）" },
   { key: "moveSpeed", title: "移動更快", desc: "移動速度 +10%（LV5：空白鍵無敵2s，冷卻30s，面板顯示）" },
   { key: "ammoCapacity", title: "更多彈藥", desc: "彈藥容量 +1（並回滿；LV5：無限彈藥）" },
 ];
@@ -91,6 +91,24 @@ const LevelUpHUD = () => {
     }, 0);
   };
 
+  // Build "already chosen" list (only show items with Lv >= 2)
+  const getLv = (key: Upgrade["key"]) =>
+    key === "maxHealth"
+      ? Math.max(1, maxHealth - BASE_MAX_HEALTH + 1)
+      : key === "bulletDamage"
+      ? Math.max(1, bulletDamage)
+      : key === "bulletCount"
+      ? Math.max(1, bulletCount)
+      : key === "ammoCapacity"
+      ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
+      : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
+
+  const picked = ((): { title: string; lv: number }[] => {
+    return ALL_UPGRADES
+      .map((u) => ({ title: u.title, lv: getLv(u.key) }))
+      .filter((x) => x.lv >= 2);
+  })();
+
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
       <div className="pointer-events-auto w-[560px] max-w-[92vw] rounded-lg bg-zinc-900/90 p-5 shadow-xl border border-white/10">
@@ -152,6 +170,21 @@ const LevelUpHUD = () => {
             );
           })}
         </div>
+        {picked.length > 0 && (
+          <div className="mt-3">
+            <div className="text-xs text-white/80 mb-1">已選強化</div>
+            <div className="flex flex-wrap gap-2">
+              {picked.map((p) => (
+                <span
+                  key={p.title}
+                  className="rounded bg-white/10 px-2 py-1 text-[11px] text-white/90"
+                >
+                  {p.title} · Lv {p.lv}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
