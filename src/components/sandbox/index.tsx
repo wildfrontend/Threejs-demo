@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import Map from '@/components/map';
 import Player from '@/components/player';
 import Bullets from '@/components/combat/bullets';
+import CollisionRange from '@/components/indicators/collision-range';
 
 function Sandbox() {
   return (
@@ -27,6 +28,7 @@ function Sandbox() {
           <Map />
           <Player />
           <FollowCamera />
+          <CollisionRange />
           <Bullets />
         </Suspense>
       </Canvas>
