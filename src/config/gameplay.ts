@@ -18,3 +18,4 @@ export const ZOMBIE_SPEED = 1.4; // default zombie speed (units/sec)
 export const XP_PER_KILL = 1; // XP per zombie kill
 export const XP_BASE = 3; // XP needed for level 1->2
 export const XP_STEP = 2; // Additional XP needed added per next level
+export const MAX_LEVEL = 15; // maximum achievable level

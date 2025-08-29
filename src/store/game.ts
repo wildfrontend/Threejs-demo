@@ -7,6 +7,7 @@ import {
   XP_BASE,
   XP_PER_KILL,
   XP_STEP,
+  MAX_LEVEL,
 } from "@/config/gameplay";
 
 type GameState = {
@@ -100,11 +101,18 @@ export const useGame = create<GameState>((set, get) => ({
   addXp: (amount = 1) =>
     set(() => {
       let { xp, level, xpToNext } = get();
+      // Already at cap: ignore XP gains; ensure xpToNext=0
+      if (level >= MAX_LEVEL) return { xp: 0, level: MAX_LEVEL, xpToNext: 0 };
       xp += amount;
       // handle multi-level-ups if large XP awarded
       while (xp >= xpToNext) {
         xp -= xpToNext;
         level += 1;
+        if (level >= MAX_LEVEL) {
+          xp = 0;
+          xpToNext = 0;
+          break;
+        }
         xpToNext = xpNeededForLevel(level);
       }
       return { xp, level, xpToNext };
