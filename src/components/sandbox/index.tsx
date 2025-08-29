@@ -33,8 +33,8 @@ function Sandbox() {
           <Director />
           <Drops />
           <FollowCamera />
-          <CollisionRange />
-          <ShootRange />
+          {/* <CollisionRange /> */}
+          {/* <ShootRange /> */}
           <Bullets />
         </Suspense>
       </Canvas>

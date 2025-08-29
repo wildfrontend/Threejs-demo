@@ -6,6 +6,11 @@ import * as THREE from "three";
 import { BULLET_RANGE } from "@/config/gameplay";
 
 const ShootRange = () => {
+  // Only show in development environment
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
   const { scene } = useThree();
   const ringRef = useRef<THREE.Mesh>(null!);
   const playerRef = useRef<THREE.Object3D | null>(null);

@@ -138,7 +138,7 @@ const Bullets = () => {
     const store = gameGet();
 
     // Update muzzle helper (dev only) to visualize spawn position
-    const isDev = process.env.NODE_ENV !== 'production';
+    const isDev = false; // disable muzzle helper marker
     if (isDev) {
       if (!playerRef.current) {
         playerRef.current = scene.getObjectByName('player') || null;
@@ -300,7 +300,7 @@ const Bullets = () => {
         <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
         <meshBasicMaterial color="#fff46b" toneMapped={false} />
       </instancedMesh>
-      {process.env.NODE_ENV !== 'production' && (
+      {false && (
         <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
           <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
           <meshBasicMaterial

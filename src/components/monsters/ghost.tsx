@@ -109,17 +109,9 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       const box = new THREE.Box3().setFromObject(group.current);
       start = box.getCenter(new THREE.Vector3());
     } catch {}
-    const isDev = process.env.NODE_ENV !== 'production';
+    // disable muzzle marker updates
     if (muzzleHelperRef.current) {
-      if (isDev) {
-        const local = start.clone();
-        // convert world center to group's local space so marker stays attached on ghost
-        try { group.current.worldToLocal(local); } catch {}
-        muzzleHelperRef.current.position.copy(local);
-        muzzleHelperRef.current.visible = true;
-      } else {
-        muzzleHelperRef.current.visible = false;
-      }
+      muzzleHelperRef.current.visible = false;
     }
 
     // Ranged attack when within attack range (do not fire when overlapping collision radius)
@@ -221,7 +213,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     <>
       <group ref={group} position={position} name={name}>
         <primitive object={model} />
-        {process.env.NODE_ENV !== 'production' && (
+        {false && (
           <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
             <sphereGeometry args={[BULLET_SIZE * 1.1, 8, 8]} />
             <meshBasicMaterial color="#00e5ff" toneMapped={false} depthTest={false} transparent opacity={0.9} />
