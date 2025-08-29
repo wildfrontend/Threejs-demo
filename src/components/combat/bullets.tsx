@@ -3,25 +3,18 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { useKeyboardControls } from "@react-three/drei";
 import {
   BULLET_SPEED,
   BULLET_RANGE,
-  FIRE_COOLDOWN,
+  AUTO_FIRE_INTERVAL,
+  BULLET_SIZE,
   MUZZLE_OFFSET,
   MUZZLE_HEIGHT,
   RELOAD_TIME,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
 
-// No input dependency: auto-fire logic only
-type Controls = {
-  forward: boolean;
-  backward: boolean;
-  left: boolean;
-  right: boolean;
-  shoot: boolean;
-};
+// Auto-fire only: no input dependency
 
 type Bullet = {
   position: THREE.Vector3;
@@ -41,7 +34,6 @@ const Bullets = () => {
   const tmpObj = useMemo(() => new THREE.Object3D(), []);
   const tmpVec = useMemo(() => new THREE.Vector3(), []);
   const reloadTimer = useRef(0);
-  const [, get] = useKeyboardControls<Controls>();
 
   // Locate the player object once available
   useFrame(() => {
@@ -76,10 +68,9 @@ const Bullets = () => {
   useFrame((_, delta) => {
     lastShotAt.current += delta;
     const store = gameGet();
-    const { shoot } = get();
 
-    // Manual fire: only when shoot key is held and not reloading
-    if (shoot && !store.reloading && lastShotAt.current >= FIRE_COOLDOWN) {
+    // Auto fire every AUTO_FIRE_INTERVAL seconds when not reloading
+    if (!store.reloading && lastShotAt.current >= AUTO_FIRE_INTERVAL) {
       if (store.ammo > 0) {
         spawnBullet();
         lastShotAt.current = 0;
@@ -143,9 +134,9 @@ const Bullets = () => {
   useEffect(() => () => void (bulletsRef.current = []), []);
 
   return (
-    <instancedMesh ref={imRef} args={[undefined as any, undefined as any, MAX_BULLETS]} castShadow>
-      <sphereGeometry args={[0.08, 8, 8]} />
-      <meshStandardMaterial color="#ffd84d" emissive="#ffb300" emissiveIntensity={0.5} />
+    <instancedMesh ref={imRef} args={[undefined as any, undefined as any, MAX_BULLETS]} frustumCulled={false}>
+      <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
+      <meshBasicMaterial color="#fff46b" toneMapped={false} />
     </instancedMesh>
   );
 };
