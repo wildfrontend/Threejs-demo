@@ -106,24 +106,31 @@ export const useGame = create<GameState>((set, get) => ({
   level: 1,
   xp: 0,
   xpToNext: xpNeededForLevel(1),
-  addXp: (amount = 1) =>
-    set(() => {
-      let { xp, level, xpToNext } = get();
-      // Already at cap: ignore XP gains; ensure xpToNext=0
-      if (level >= MAX_LEVEL) return { xp: 0, level: MAX_LEVEL, xpToNext: 0 };
-      xp += amount;
-      // handle multi-level-ups if large XP awarded
-      while (xp >= xpToNext) {
-        xp -= xpToNext;
-        level += 1;
-        if (level >= MAX_LEVEL) {
-          xp = 0;
-          xpToNext = 0;
-          break;
-        }
-        xpToNext = xpNeededForLevel(level);
+  addXp: (amount = 1) => {
+    let { xp, level, xpToNext } = get();
+    const prevLevel = level;
+    // At cap: enforce cap state and ignore gains
+    if (level >= MAX_LEVEL) {
+      if (xp !== 0 || xpToNext !== 0) set(() => ({ xp: 0, level: MAX_LEVEL, xpToNext: 0 }));
+      return;
+    }
+    xp += amount;
+    let leveledUp = false;
+    while (xp >= xpToNext) {
+      xp -= xpToNext;
+      level += 1;
+      leveledUp = true;
+      if (level >= MAX_LEVEL) {
+        xp = 0;
+        xpToNext = 0;
+        break;
       }
-      return { xp, level, xpToNext };
-    }),
+      xpToNext = xpNeededForLevel(level);
+    }
+    set(() => ({ xp, level, xpToNext }));
+    if (leveledUp && level > prevLevel) {
+      set(() => ({ paused: true }));
+    }
+  },
   resetXp: () => set(() => ({ level: 1, xp: 0, xpToNext: xpNeededForLevel(1) })),
 }));
