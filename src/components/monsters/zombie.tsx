@@ -79,6 +79,10 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
       g.copy(p.clone().addScaledVector(away, R + HIT_BOUNCE_BACK));
       retreatDir.current.copy(away); // backwards relative to the approach
       retreatTimer.current = HIT_BOUNCE_PAUSE;
+      // Deal contact damage to player
+      try {
+        gameGet().damage?.(1);
+      } catch {}
       group.current.position.y = 0;
       return;
     }
@@ -101,6 +105,10 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
         g.copy(newPos);
         retreatDir.current.copy(outward);
         retreatTimer.current = HIT_BOUNCE_PAUSE;
+        // Deal contact damage to player
+        try {
+          gameGet().damage?.(1);
+        } catch {}
       } else {
         g.copy(candidate);
       }
