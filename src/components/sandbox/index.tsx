@@ -1,22 +1,59 @@
 'use client';
 
-import { OrbitControls } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
+import { KeyboardControls } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Suspense, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 
 import Map from '@/components/map';
+import Player from '@/components/player';
 
 function Sandbox() {
   return (
-    <Canvas camera={{ position: [15, 18, 15], fov: 50 }} shadows>
-      <ambientLight intensity={0.5} />
-      <directionalLight castShadow intensity={1.2} position={[10, 20, 10]} />
-      <Suspense fallback={null}>
-        <Map />
-      </Suspense>
-      <OrbitControls maxPolarAngle={Math.PI / 2.2} target={[0, 0, 0]} />
-    </Canvas>
+    <KeyboardControls
+      map={[
+        { name: 'forward', keys: ['w', 'ArrowUp'] },
+        { name: 'backward', keys: ['s', 'ArrowDown'] },
+        { name: 'left', keys: ['a', 'ArrowLeft'] },
+        { name: 'right', keys: ['d', 'ArrowRight'] },
+      ]}
+    >
+      <Canvas camera={{ position: [0, 14, 0], fov: 45 }} shadows>
+        <ambientLight intensity={0.5} />
+        <directionalLight castShadow intensity={1.2} position={[10, 20, 10]} />
+        <Suspense fallback={null}>
+          <Map />
+          <Player />
+          <FollowCamera />
+        </Suspense>
+      </Canvas>
+    </KeyboardControls>
   );
 }
 
 export default Sandbox;
+
+function FollowCamera() {
+  const { camera, scene } = useThree();
+  const playerRef = useRef<THREE.Object3D | null>(null);
+  const offset = useMemo(() => new THREE.Vector3(0, 14, 0), []); // overhead height
+  const tmp = useMemo(() => new THREE.Vector3(), []);
+  const fixedQuat = useMemo(
+    () => new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)),
+    []
+  );
+
+  useFrame(() => {
+    if (!playerRef.current) {
+      playerRef.current = scene.getObjectByName('player') || null;
+      if (!playerRef.current) return;
+    }
+
+    const p = playerRef.current.getWorldPosition(tmp.set(0, 0, 0));
+    camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
+    // Fixed top-down direction (no rotation change with player)
+    camera.quaternion.copy(fixedQuat);
+  });
+
+  return null;
+}
