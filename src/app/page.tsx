@@ -1,9 +1,11 @@
 import Sandbox from '@/components/sandbox';
+import HealthHUD from '@/components/hud/health';
 
 function Page() {
   return (
-    <div className="w-full h-dvh">
+    <div className="relative w-full h-dvh">
       <Sandbox />
+      <HealthHUD />
     </div>
   );
 }
