@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { useKeyboardControls } from "@react-three/drei";
 import {
   BULLET_SPEED,
   BULLET_RANGE,
@@ -14,6 +15,13 @@ import {
 import { useGame } from "@/store/game";
 
 // No input dependency: auto-fire logic only
+type Controls = {
+  forward: boolean;
+  backward: boolean;
+  left: boolean;
+  right: boolean;
+  shoot: boolean;
+};
 
 type Bullet = {
   position: THREE.Vector3;
@@ -33,6 +41,7 @@ const Bullets = () => {
   const tmpObj = useMemo(() => new THREE.Object3D(), []);
   const tmpVec = useMemo(() => new THREE.Vector3(), []);
   const reloadTimer = useRef(0);
+  const [, get] = useKeyboardControls<Controls>();
 
   // Locate the player object once available
   useFrame(() => {
@@ -42,7 +51,10 @@ const Bullets = () => {
   });
 
   const spawnBullet = () => {
-    if (!playerRef.current) return;
+    if (!playerRef.current) {
+      playerRef.current = scene.getObjectByName("player") || null;
+      if (!playerRef.current) return;
+    }
 
     // World position and facing
     const p = playerRef.current.getWorldPosition(tmpVec.set(0, 0, 0));
@@ -63,15 +75,23 @@ const Bullets = () => {
 
   useFrame((_, delta) => {
     lastShotAt.current += delta;
-    // Auto-fire every FIRE_COOLDOWN seconds until ammo is depleted
     const store = gameGet();
-    if (!store.reloading && store.ammo > 0 && lastShotAt.current >= FIRE_COOLDOWN) {
-      spawnBullet();
-      lastShotAt.current = 0;
-      store.consumeAmmo(1);
+    const { shoot } = get();
+
+    // Manual fire: only when shoot key is held and not reloading
+    if (shoot && !store.reloading && lastShotAt.current >= FIRE_COOLDOWN) {
+      if (store.ammo > 0) {
+        spawnBullet();
+        lastShotAt.current = 0;
+        store.consumeAmmo(1);
+      } else {
+        // trigger reload if empty
+        store.startReload();
+        reloadTimer.current = 0;
+      }
     }
 
-    // Start reload automatically when ammo runs out
+    // Auto start reload if empty even without pressing
     if (!store.reloading && store.ammo === 0) {
       store.startReload();
       reloadTimer.current = 0;
