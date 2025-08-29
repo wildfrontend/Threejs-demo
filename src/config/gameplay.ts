@@ -29,6 +29,8 @@ export const BULLET_SPREAD_DEG = 10;
 export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
 export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)
+// Enemy projectile speeds
+export const GHOST_BULLET_SPEED = 6; // slower than player bullets
 
 // Monster stats
 export const SKELETON_HP = 2;
@@ -45,6 +47,7 @@ export const VAMPIRE_HP = 50;
 export const VAMPIRE_ATTACK = 3;
 export const VAMPIRE_ATTACK_RANGE = 2;
 export const VAMPIRE_BULLET_DAMAGE = 1;
+export const VAMPIRE_BULLET_SPEED = 8; // vampire projectile speed (units/sec)
 
 // Generic attack cooldown for ranged/contact (seconds)
 export const MONSTER_ATTACK_COOLDOWN = 1.0;

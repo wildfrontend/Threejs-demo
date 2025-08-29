@@ -15,7 +15,7 @@ import {
   VAMPIRE_HP,
   VAMPIRE_ATTACK_RANGE,
   MONSTER_ATTACK_COOLDOWN,
-  BULLET_SPEED,
+  VAMPIRE_BULLET_SPEED,
   BULLET_SIZE,
   VAMPIRE_BULLET_DAMAGE,
 } from "@/config/gameplay";
@@ -159,7 +159,7 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
       const arr = bulletsRef.current;
       let write = 0;
       const len = arr.length;
-      const speedB = BULLET_SPEED;
+      const speedB = VAMPIRE_BULLET_SPEED;
       const rangeB = VAMPIRE_ATTACK_RANGE;
       for (let read = 0; read < len; read++) {
         const b = arr[read];

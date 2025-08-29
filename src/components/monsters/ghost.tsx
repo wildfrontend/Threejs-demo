@@ -15,7 +15,7 @@ import {
   GHOST_HP,
   GHOST_ATTACK_RANGE,
   MONSTER_ATTACK_COOLDOWN,
-  BULLET_SPEED,
+  GHOST_BULLET_SPEED,
   BULLET_SIZE,
 } from "@/config/gameplay";
 import { useGame } from "@/store/game";
@@ -162,7 +162,7 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       const arr = bulletsRef.current;
       let write = 0;
       const len = arr.length;
-      const speedB = BULLET_SPEED;
+      const speedB = GHOST_BULLET_SPEED;
       const rangeB = attackR; // bullets travel up to attack range
       for (let read = 0; read < len; read++) {
         const b = arr[read];
