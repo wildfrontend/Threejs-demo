@@ -16,6 +16,8 @@ import {
   GHOST_HP,
   VAMPIRE_HP,
   FULL_CIRCLE_BULLETS,
+  FULL_CIRCLE_DAMAGE_SCALE,
+  HEART_DROP_CHANCE,
 } from '@/config/gameplay';
 import { useGame } from '@/store/game';
 
@@ -25,6 +27,7 @@ type Bullet = {
   position: THREE.Vector3;
   direction: THREE.Vector3;
   traveled: number;
+  damage?: number;
 };
 
 const MAX_BULLETS = 256;
@@ -98,6 +101,9 @@ const Bullets = () => {
 
     // Spawn multiple bullets in a symmetrical fan based on bulletCount
     const count = Math.max(1, gameGet().bulletCount ?? 1);
+    const baseDamage = gameGet().bulletDamage ?? 1;
+    const radial = count >= 5;
+    const shotDamage = radial ? Math.max(1, Math.floor(baseDamage * FULL_CIRCLE_DAMAGE_SCALE)) : baseDamage;
     const spreadRad = THREE.MathUtils.degToRad(BULLET_SPREAD_DEG);
     // Compute yaw of center direction
     const yaw = Math.atan2(dirCenter.x, dirCenter.z);
@@ -111,17 +117,17 @@ const Bullets = () => {
       for (let i = 0; i < N; i++) {
         const angle = (i / N) * Math.PI * 2;
         const dir = makeDirFromYaw(angle);
-        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0 });
+        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0, damage: shotDamage });
       }
     } else if (count === 1) {
-      bulletsRef.current.push({ position: start, direction: dirCenter, traveled: 0 });
+      bulletsRef.current.push({ position: start, direction: dirCenter, traveled: 0, damage: shotDamage });
     } else {
       const half = (count - 1) / 2;
       for (let i = 0; i < count; i++) {
         const offsetIndex = i - half; // symmetric around 0
         const angle = yaw + offsetIndex * spreadRad;
         const dir = makeDirFromYaw(angle);
-        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0 });
+        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0, damage: shotDamage });
       }
     }
   };
@@ -228,7 +234,7 @@ const Bullets = () => {
                 : 2;
               const maxHp = z.userData?.maxHp ?? defaultMax;
               const curHp = z.userData?.hp ?? maxHp;
-              const dmg = gameGet().bulletDamage ?? 1;
+              const dmg = (b as any).damage ?? (gameGet().bulletDamage ?? 1);
               const nextHp = Math.max(0, curHp - dmg);
               z.userData = { ...z.userData, hp: nextHp, maxHp };
               if (!pierce) {
@@ -241,6 +247,16 @@ const Bullets = () => {
                 z.visible = false;
                 try {
                   gameGet().addKill?.();
+                } catch {}
+                // Drop chance: vampire always drop, others by chance
+                try {
+                  const nameLow = name;
+                  const isVampire = nameLow === 'vampire' || nameLow.startsWith('vampire');
+                  const drop = isVampire || Math.random() < (HEART_DROP_CHANCE as number);
+                  if (drop) {
+                    const c = sphere.center;
+                    useGame.getState().addHeartDrop?.([c.x, 0, c.z]);
+                  }
                 } catch {}
                 // 可在此處增加計分或掉落物觸發
               }

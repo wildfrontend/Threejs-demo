@@ -26,11 +26,15 @@ export const MAX_LEVEL = 15; // maximum achievable level
 // Shooting fan spread (degrees between adjacent bullets)
 export const BULLET_SPREAD_DEG = 10;
 export const FULL_CIRCLE_BULLETS = 16; // bullets fired in 360° at max scatter level
+export const FULL_CIRCLE_DAMAGE_SCALE = 0.7; // 70% damage in 360° mode
 // Player move speed
 export const MOVE_SPEED_BASE = 4.5; // base move speed
 export const MOVE_SPEED_STEP = 0.1; // +10% per upgrade
 export const BASE_MAX_HEALTH = 4; // hearts at start (for Lv display)
 export const BASE_AMMO_CAPACITY = AMMO_CAPACITY; // for Lv display of ammo upgrade
+// Drops
+export const HEART_DROP_CHANCE = 0.25; // 25% chance for normal monsters
+export const HEART_PICKUP_RADIUS = 1.0; // pickup radius for heart
 // Enemy projectile speeds
 export const GHOST_BULLET_SPEED = 2; // much slower for clearer effect
 

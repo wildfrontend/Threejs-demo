@@ -11,6 +11,7 @@ import ShootRange from '@/components/indicators/shoot-range';
 import Map from '@/components/map';
 import Player from '@/components/player';
 import Director from '@/components/director';
+import Drops from '@/components/items/drops';
 
 function Sandbox() {
   return (
@@ -30,6 +31,7 @@ function Sandbox() {
           <Map />
           <Player />
           <Director />
+          <Drops />
           <FollowCamera />
           <CollisionRange />
           <ShootRange />

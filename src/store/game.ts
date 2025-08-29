@@ -61,6 +61,11 @@ type GameState = {
   moveSpeed: number;
   moveSpeedUpgrades: number;
   infiniteAmmo: boolean;
+  // Drops (hearts)
+  drops: { id: number; kind: 'heart'; position: [number, number, number] }[];
+  addHeartDrop: (pos: [number, number, number]) => void;
+  removeDrop: (id: number) => void;
+  clearDrops: () => void;
 };
 
 const xpNeededForLevel = (level: number) => XP_BASE + (level - 1) * XP_STEP;
@@ -182,6 +187,7 @@ export const useGame = create<GameState>((set, get) => ({
         invincible: false,
         invincibleFor: 0,
         invincibleCooldown: 0,
+        drops: [],
         // remount scene consumers
         runId: get().runId + 1,
       } as any;
@@ -197,6 +203,20 @@ export const useGame = create<GameState>((set, get) => ({
   moveSpeedUpgrades: 0,
   moveSpeed: MOVE_SPEED_BASE,
   infiniteAmmo: false,
+  drops: [],
+  addHeartDrop: (position) =>
+    set(() => {
+      const { drops } = get() as any;
+      const id = drops && drops.length ? drops[drops.length - 1].id + 1 : 1;
+      const next = [...(drops || []), { id, kind: 'heart', position }];
+      return { drops: next } as any;
+    }),
+  removeDrop: (id) =>
+    set(() => {
+      const { drops } = get() as any;
+      return { drops: (drops || []).filter((d: any) => d.id !== id) } as any;
+    }),
+  clearDrops: () => set(() => ({ drops: [] as any })),
   addXp: (amount = 1) => {
     let { xp, level, xpToNext } = get();
     const prevLevel = level;
