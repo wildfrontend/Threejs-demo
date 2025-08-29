@@ -7,13 +7,7 @@ import * as THREE from 'three';
 
 import { useGame } from '@/store/game';
 
-type Controls = {
-  forward: boolean;
-  backward: boolean;
-  left: boolean;
-  right: boolean;
-  shoot: boolean;
-};
+type Controls = 'forward' | 'backward' | 'left' | 'right' | 'shoot';
 
 const Player = () => {
   const group = useRef<THREE.Group>(null!);
