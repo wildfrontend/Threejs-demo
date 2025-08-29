@@ -40,6 +40,12 @@ type GameState = {
   xpToNext: number; // XP needed to reach next level
   addXp: (amount?: number) => void;
   resetXp: () => void;
+  upgradePending: number; // number of upgrade choices to make
+  applyUpgrade: (kind: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed") => void;
+  // Upgradeable stats
+  bulletDamage: number;
+  bulletCount: number;
+  moveSpeed: number;
 };
 
 const xpNeededForLevel = (level: number) => XP_BASE + (level - 1) * XP_STEP;
@@ -106,6 +112,11 @@ export const useGame = create<GameState>((set, get) => ({
   level: 1,
   xp: 0,
   xpToNext: xpNeededForLevel(1),
+  upgradePending: 0,
+  // Upgradeable stats defaults
+  bulletDamage: 1,
+  bulletCount: 1,
+  moveSpeed: 6,
   addXp: (amount = 1) => {
     let { xp, level, xpToNext } = get();
     const prevLevel = level;
@@ -129,8 +140,33 @@ export const useGame = create<GameState>((set, get) => ({
     }
     set(() => ({ xp, level, xpToNext }));
     if (leveledUp && level > prevLevel) {
-      set(() => ({ paused: true }));
+      const gained = level - prevLevel;
+      set(() => ({ paused: true, upgradePending: get().upgradePending + gained }));
     }
   },
   resetXp: () => set(() => ({ level: 1, xp: 0, xpToNext: xpNeededForLevel(1) })),
+  applyUpgrade: (kind) =>
+    set(() => {
+      const s = get();
+      let { maxHealth, health, bulletDamage, bulletCount, moveSpeed, upgradePending, paused } = s as any;
+      switch (kind) {
+        case "maxHealth":
+          maxHealth = Math.max(1, (maxHealth ?? 1) + 1);
+          // Refill to full when gaining a heart
+          health = maxHealth;
+          break;
+        case "bulletDamage":
+          bulletDamage = (bulletDamage ?? 1) + 1;
+          break;
+        case "bulletCount":
+          bulletCount = Math.max(1, (bulletCount ?? 1) + 1);
+          break;
+        case "moveSpeed":
+          moveSpeed = (moveSpeed ?? 6) * 1.1;
+          break;
+      }
+      upgradePending = Math.max(0, (upgradePending ?? 0) - 1);
+      if (upgradePending === 0 && paused) paused = false;
+      return { maxHealth, health, bulletDamage, bulletCount, moveSpeed, upgradePending, paused };
+    }),
 }));

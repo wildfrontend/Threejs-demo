@@ -4,6 +4,7 @@ import AmmoHUD from '@/components/hud/ammo';
 import KillsHUD from '@/components/hud/kills';
 import PauseHUD from '@/components/hud/pause';
 import XPHUD from '@/components/hud/xp';
+import LevelUpHUD from '@/components/hud/levelup';
 
 function Page() {
   return (
@@ -14,6 +15,7 @@ function Page() {
       <KillsHUD />
       <PauseHUD />
       <XPHUD />
+      <LevelUpHUD />
     </div>
   );
 }

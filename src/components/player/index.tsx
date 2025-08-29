@@ -38,7 +38,7 @@ const Player = () => {
       (forward ? -1 : 0) + (backward ? 1 : 0)
     );
 
-    const speed = 6; // units per second
+    const speed = gameGet().moveSpeed ?? 6; // units per second
     if (dir.lengthSq() > 0 && group.current) {
       dir.normalize();
       group.current.position.addScaledVector(dir, speed * delta);

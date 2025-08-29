@@ -10,6 +10,7 @@ import {
   BULLET_SIZE,
   BULLET_SPEED,
   RELOAD_TIME,
+  BULLET_SPREAD_DEG,
 } from '@/config/gameplay';
 import { useGame } from '@/store/game';
 
@@ -80,15 +81,30 @@ const Bullets = () => {
       return bestPos;
     })();
 
-    const dir = nearestTarget
+    const dirCenter = nearestTarget
       ? new THREE.Vector3().subVectors(nearestTarget, start).normalize()
       : forward.clone();
 
-    bulletsRef.current.push({
-      position: start,
-      direction: dir,
-      traveled: 0,
-    });
+    // Spawn multiple bullets in a symmetrical fan based on bulletCount
+    const count = Math.max(1, gameGet().bulletCount ?? 1);
+    const spreadRad = THREE.MathUtils.degToRad(BULLET_SPREAD_DEG);
+    // Compute yaw of center direction
+    const yaw = Math.atan2(dirCenter.x, dirCenter.z);
+
+    const makeDirFromYaw = (angle: number) =>
+      new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize();
+
+    if (count === 1) {
+      bulletsRef.current.push({ position: start, direction: dirCenter, traveled: 0 });
+    } else {
+      const half = (count - 1) / 2;
+      for (let i = 0; i < count; i++) {
+        const offsetIndex = i - half; // symmetric around 0
+        const angle = yaw + offsetIndex * spreadRad;
+        const dir = makeDirFromYaw(angle);
+        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0 });
+      }
+    }
   };
 
   useFrame((_, delta) => {
@@ -170,7 +186,8 @@ const Bullets = () => {
               const z: any = obj as any;
               const maxHp = z.userData?.maxHp ?? 2;
               const curHp = z.userData?.hp ?? maxHp;
-              const nextHp = Math.max(0, curHp - 1);
+              const dmg = gameGet().bulletDamage ?? 1;
+              const nextHp = Math.max(0, curHp - dmg);
               z.userData = { ...z.userData, hp: nextHp, maxHp };
               keep = false; // bullet consumed on hit
               hit = true;
