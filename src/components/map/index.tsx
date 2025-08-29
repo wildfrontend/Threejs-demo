@@ -1,260 +1,178 @@
-// src/components/Map.tsx
-import { useGLTF, useTexture } from '@react-three/drei';
-import { ThreeElements } from '@react-three/fiber';
-import { FC, useEffect, useMemo, useState } from 'react';
+// src/components/map/index.tsx
+import { FC, useMemo } from 'react';
+import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
-import Model from '../utils/model';
+import Model from '@/components/utils/model';
 
-type ModelMeta = {
-  id: string;
-  url: string;
-  weight?: number;
-  minDist?: number;
-  scale?: [number, number];
-  rotateY?: boolean;
-  rotationYRange?: [number, number];
-  role?: 'fence' | 'prop' | 'landmark';
-};
-
-type Manifest = {
-  map: { width: number; depth: number; fenceStep: number; density?: number };
-  models: ModelMeta[];
-};
-
-type MapProps = ThreeElements['group'] & {
-  seed?: number;
-  width?: number;
-  depth?: number;
-  fenceStep?: number;
-  density?: number; // override manifest density
-};
-
-function mulberry32(seed: number) {
-  return function () {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const randRange = (rng: () => number, min: number, max: number) =>
-  min + (max - min) * rng();
-
-function tryPlacePoint(
-  rng: () => number,
-  width: number,
-  depth: number,
-  minDist: number,
-  existing: THREE.Vector2[],
-  maxTries = 30
-): THREE.Vector2 | null {
-  for (let i = 0; i < maxTries; i++) {
-    const x = randRange(rng, -width / 2, width / 2);
-    const z = randRange(rng, -depth / 2, depth / 2);
-    const p = new THREE.Vector2(x, z);
-    let ok = true;
-    for (const e of existing) {
-      if (p.distanceTo(e) < minDist) {
-        ok = false;
-        break;
-      }
-    }
-    if (ok) return p;
-  }
-  return null;
+function createCanvas(size: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  return { canvas, ctx };
 }
 
-function generateFenceLoop(
-  url: string,
-  width: number,
-  depth: number,
-  step: number
-) {
-  const halfW = width / 2;
-  const halfD = depth / 2;
-  const items: {
-    url: string;
-    position: [number, number, number];
-    rotation: [number, number, number];
-  }[] = [];
-  for (let x = -halfW; x <= halfW; x += step) {
-    items.push({ url, position: [x, 0, -halfD], rotation: [0, 0, 0] });
-    items.push({ url, position: [x, 0, halfD], rotation: [0, Math.PI, 0] });
-  }
-  for (let z = -halfD; z <= halfD; z += step) {
-    items.push({
-      url,
-      position: [-halfW, 0, z],
-      rotation: [0, Math.PI / 2, 0],
-    });
-    items.push({
-      url,
-      position: [halfW, 0, z],
-      rotation: [0, -Math.PI / 2, 0],
-    });
-  }
-  return items;
-}
+function drawTileableGrass(size: number) {
+  const { canvas, ctx } = createCanvas(size);
 
-const Map: FC<MapProps> = ({
-  seed = 42,
-  width: widthProp,
-  depth: depthProp,
-  fenceStep: fenceStepProp,
-  density: densityProp,
-  ...props
-}) => {
-  const [manifest, setManifest] = useState<Manifest | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Base gradient
+  const g = ctx.createLinearGradient(0, 0, 0, size);
+  g.addColorStop(0, 'hsl(110, 36%, 22%)');
+  g.addColorStop(1, 'hsl(110, 36%, 22%)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
 
-  // 載入地面貼圖
-  const grassTexture = useTexture('/assets/textures/grass.png');
-
-  // 載入 manifest
-  useEffect(() => {
-    fetch('/assets/manifest.json')
-      .then((r) => r.json())
-      .then((data) => setManifest(data))
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  // 若 manifest 尚未載入，先畫基本地面避免白畫面
-  const w = manifest ? (widthProp ?? manifest.map.width) : (widthProp ?? 60);
-  const d = manifest ? (depthProp ?? manifest.map.depth) : (depthProp ?? 60);
-  const fenceStep = manifest
-    ? (fenceStepProp ?? manifest.map.fenceStep)
-    : (fenceStepProp ?? 3);
-  const density = manifest
-    ? (densityProp ?? manifest.map.density ?? 0.5)
-    : (densityProp ?? 0.5);
-
-  // 根據地圖尺寸重複地面貼圖以建立場景感
-  useEffect(() => {
-    grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-    // 將貼圖根據寬與深的比例進行重複，提升地圖覆蓋效果
-    grassTexture.repeat.set(w / 10, d / 10);
-    grassTexture.needsUpdate = true;
-  }, [grassTexture, w, d]);
-
-  // 預載 glb，等 manifest 有資料才做
-  useEffect(() => {
-    if (!manifest) return;
-    manifest.models.forEach((m) => useGLTF.preload(m.url));
-  }, [manifest]);
-
-  const rng = useMemo(() => mulberry32(seed), [seed]);
-
-  const { placements, fenceItems } = useMemo(() => {
-    if (!manifest) return { placements: [] as any[], fenceItems: [] as any[] };
-
-    const props = manifest.models.filter((m) => m.role !== 'fence');
-    const fence = manifest.models.find((m) => m.role === 'fence');
-
-    // 依 density 與 weight 粗略換算數量（你可改為更精準的面積/密度公式）
-    const area = w * d;
-    const base = Math.max(10, Math.floor((area / 20) * density)); // 基底數量
-    const totalWeight = props.reduce((s, m) => s + (m.weight ?? 1), 0);
-
-    const counts = props.map((m) => ({
-      m,
-      count: Math.round(base * ((m.weight ?? 1) / totalWeight)),
-    }));
-
-    // 放置（全局避免重疊）
-    const allPoints: THREE.Vector2[] = [];
-    const results: {
-      url: string;
-      position: [number, number, number];
-      rotation: [number, number, number];
-      scale: number;
-    }[] = [];
-
-    for (const { m, count } of counts) {
-      for (let i = 0; i < count; i++) {
-        const p = tryPlacePoint(rng, w, d, m.minDist ?? 2.0, allPoints);
-        if (!p) continue;
-        allPoints.push(p);
-
-        let ry = 0;
-        if (m.rotateY) {
-          const [rmin, rmax] = m.rotationYRange ?? [0, Math.PI * 2];
-          ry = randRange(rng, rmin, rmax);
+  // Fine color noise (tileable via wrap drawing)
+  const noisePass = (count: number, sat: number, light: number, alpha: number) => {
+    ctx.globalAlpha = alpha;
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const hueJitter = (Math.random() - 0.5) * 8; // slight hue variation
+      ctx.fillStyle = `hsl(${110 + hueJitter}, ${sat}%, ${light + (Math.random() - 0.5) * 8}%)`;
+      // Draw in a 3x3 wrap grid for seamless tiling
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          ctx.fillRect((x + ox * size) | 0, (y + oy * size) | 0, 1, 1);
         }
-        const scale = m.scale ? randRange(rng, m.scale[0], m.scale[1]) : 1;
-
-        results.push({
-          url: m.url,
-          position: [p.x, 0, p.y],
-          rotation: [0, ry, 0],
-          scale,
-        });
       }
     }
+    ctx.globalAlpha = 1;
+  };
 
-    // 地標（例如 crypt）確保至少 1 個
-    manifest.models
-      .filter((m) => m.role === 'landmark')
-      .forEach((m) => {
-        const p = tryPlacePoint(rng, w, d, m.minDist ?? 4.0, allPoints);
-        if (!p) return;
-        allPoints.push(p);
-        const scale = m.scale ? randRange(rng, m.scale[0], m.scale[1]) : 1.2;
-        const [rmin, rmax] = m.rotationYRange ?? [0, Math.PI * 2];
-        const ry = m.rotateY ? randRange(rng, rmin, rmax) : 0;
-        results.push({
-          url: m.url,
-          position: [p.x, 0, p.y],
-          rotation: [0, ry, 0],
-          scale,
-        });
-      });
+  noisePass(size * 40, 30, 28, 0.35);
+  noisePass(size * 25, 38, 24, 0.25);
+  noisePass(size * 15, 26, 20, 0.2);
 
-    const fenceItems = fence
-      ? generateFenceLoop(fence.url, w, d, fenceStep)
-      : [];
+  // Blade-like micro strokes for perceived grass fiber
+  ctx.lineWidth = 1;
+  for (let i = 0; i < size * 2; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const len = 3 + Math.random() * 6;
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * (Math.PI / 6); // mostly vertical
+    const h = 108 + (Math.random() - 0.5) * 10;
+    const s = 40 + Math.random() * 20;
+    const l = 24 + Math.random() * 16;
+    ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, 0.25)`;
 
-    return { placements: results, fenceItems };
-  }, [manifest, rng, w, d, fenceStep, density]);
+    const dx = Math.cos(angle) * len;
+    const dy = Math.sin(angle) * len;
+
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = -1; oy <= 1; oy++) {
+        ctx.beginPath();
+        ctx.moveTo(x + ox * size, y + oy * size);
+        ctx.lineTo(x + dx + ox * size, y + dy + oy * size);
+        ctx.stroke();
+      }
+    }
+  }
+
+  return canvas;
+}
+
+function drawTileableBump(size: number) {
+  const { canvas, ctx } = createCanvas(size);
+  ctx.fillStyle = 'rgb(128,128,128)';
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.globalAlpha = 0.2;
+  for (let i = 0; i < size * 35; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const val = 96 + Math.random() * 64; // mid gray variance
+    ctx.fillStyle = `rgb(${val | 0},${val | 0},${val | 0})`;
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = -1; oy <= 1; oy++) {
+        ctx.fillRect((x + ox * size) | 0, (y + oy * size) | 0, 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  return canvas;
+}
+
+const Map: FC = () => {
+  const { gl } = useThree();
+  const textures = useMemo(() => {
+    const size = 1024; // detail resolution
+    const grassCanvas = drawTileableGrass(size);
+    const bumpCanvas = drawTileableBump(size);
+
+    const grassMap = new THREE.CanvasTexture(grassCanvas);
+    const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+
+    const maxAniso = Math.min(16, gl.capabilities.getMaxAnisotropy?.() || 1);
+    [grassMap, bumpMap].forEach((t) => {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.anisotropy = maxAniso;
+      t.generateMipmaps = true;
+      t.minFilter = THREE.LinearMipMapLinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.needsUpdate = true;
+      // Dense tiling for close-up detail
+      t.repeat.set(40, 40);
+    });
+    grassMap.colorSpace = THREE.SRGBColorSpace;
+    // Bump/height data is non-color data
+    bumpMap.colorSpace = THREE.NoColorSpace as unknown as THREE.ColorSpace;
+
+    return { grassMap, bumpMap };
+  }, [gl]);
 
   return (
-    <group {...props}>
-      {/* 地面 */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[w, d, 1, 1]} />
-        <meshStandardMaterial map={grassTexture} />
+    <group>
+      {/* Ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[500, 500, 1, 1]} />
+        <meshStandardMaterial
+          map={textures.grassMap}
+          bumpMap={textures.bumpMap}
+          bumpScale={0.03}
+          roughness={1}
+          metalness={0}
+        />
       </mesh>
 
-      {/* 隨機物件 */}
-      {placements.map((p, i) => (
-          <Model
-            key={`spawn-${i}`}
-            position={p.position}
-            rotation={p.rotation}
-            scale={p.scale}
-            url={p.url}
-          />
-      ))}
+      {/* Road and a few props pulled from /public/assets */}
+      <group position={[0, 0, 0]}>
+        <Model url="/assets/road.glb" position={[0, 0, 0]} />
+        {/* Fences */}
+        <Model
+          url="/assets/iron-fence-border.glb"
+          position={[-10, 0, -10]}
+          rotation={[0, Math.PI / 2, 0]}
+        />
+        <Model
+          url="/assets/iron-fence-border.glb"
+          position={[10, 0, -10]}
+          rotation={[0, Math.PI / 2, 0]}
+        />
+        <Model
+          url="/assets/iron-fence-border.glb"
+          position={[-10, 0, 10]}
+          rotation={[0, Math.PI / 2, 0]}
+        />
+        <Model
+          url="/assets/iron-fence-border.glb"
+          position={[10, 0, 10]}
+          rotation={[0, Math.PI / 2, 0]}
+        />
 
-      {/* 圍籬 */}
-      {fenceItems.map((f, i) => (
-          <Model
-            key={`fence-${i}`}
-            position={f.position}
-            rotation={f.rotation}
-            url={f.url}
-          />
-      ))}
-
-      {/* 若 manifest 載入失敗，可於開發時顯示錯誤 */}
-      {error && (
-        <group>
-          <mesh position={[0, 0.01, 0]}>
-            <planeGeometry args={[w * 0.8, d * 0.2]} />
-              <meshBasicMaterial color="red" opacity={0.2} transparent />
-          </mesh>
-        </group>
-      )}
+        {/* Trees and props */}
+        <Model url="/assets/pine.glb" position={[-15, 0, -5]} />
+        <Model url="/assets/pine.glb" position={[18, 0, 8]} />
+        <Model
+          url="/assets/bench.glb"
+          position={[5, 0, -6]}
+          rotation={[0, Math.PI / 4, 0]}
+        />
+        <Model url="/assets/gravestone-wide.glb" position={[-6, 0, 6]} />
+        <Model url="/assets/lantern-candle.glb" position={[2, 0, 2]} />
+      </group>
     </group>
   );
 };
