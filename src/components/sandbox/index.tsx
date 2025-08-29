@@ -36,12 +36,19 @@ export default Sandbox;
 function FollowCamera() {
   const { camera, scene } = useThree();
   const playerRef = useRef<THREE.Object3D | null>(null);
-  const offset = useMemo(() => new THREE.Vector3(0, 14, 0), []); // overhead height
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  const tiltDeg = 60;
+  const height = 14; // keep the player roughly this far below the camera
+  const tiltRad = useMemo(() => THREE.MathUtils.degToRad(tiltDeg), [tiltDeg]);
   const fixedQuat = useMemo(
-    () => new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)),
-    []
+    () => new THREE.Quaternion().setFromEuler(new THREE.Euler(-tiltRad, 0, 0)),
+    [tiltRad]
   );
+  const forward = useMemo(
+    () => new THREE.Vector3(0, 0, -1).applyQuaternion(fixedQuat),
+    [fixedQuat]
+  );
+  const distance = useMemo(() => height / Math.sin(tiltRad), [height, tiltRad]);
 
   useFrame(() => {
     if (!playerRef.current) {
@@ -50,8 +57,8 @@ function FollowCamera() {
     }
 
     const p = playerRef.current.getWorldPosition(tmp.set(0, 0, 0));
-    camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
-    // Fixed top-down direction (no rotation change with player)
+    // Place camera so its fixed forward vector points at the player
+    camera.position.copy(p).sub(tmp.copy(forward).multiplyScalar(distance));
     camera.quaternion.copy(fixedQuat);
   });
 
