@@ -177,6 +177,9 @@ const Bullets = () => {
                 // 僅標記死亡與隱藏，讓 Spawner 接手卸載/重生
                 z.userData = { ...z.userData, killed: true };
                 z.visible = false;
+                try {
+                  gameGet().addKill?.();
+                } catch {}
                 // 可在此處增加計分或掉落物觸發
               }
             }

@@ -20,6 +20,9 @@ type GameState = {
   startReload: () => void;
   hitRadius: number;
   setHitRadius: (value: number) => void;
+  kills: number;
+  addKill: () => void;
+  resetKills: () => void;
 };
 
 export const useGame = create<GameState>((set, get) => ({
@@ -69,4 +72,7 @@ export const useGame = create<GameState>((set, get) => ({
   startReload: () => set(() => ({ reloading: true })),
   hitRadius: COLLISION_RADIUS,
   setHitRadius: (value) => set(() => ({ hitRadius: Math.max(0.1, value) })),
+  kills: 0,
+  addKill: () => set(() => ({ kills: get().kills + 1 })),
+  resetKills: () => set(() => ({ kills: 0 })),
 }));
