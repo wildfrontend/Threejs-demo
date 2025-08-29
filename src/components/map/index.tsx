@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 // src/components/map/index.tsx
-import { FC, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
+import { FC, useMemo } from 'react';
 import * as THREE from 'three';
 
 function createCanvas(size: number) {
@@ -24,7 +24,12 @@ function drawTileableGrass(size: number) {
   ctx.fillRect(0, 0, size, size);
 
   // Fine color noise (tileable via wrap drawing)
-  const noisePass = (count: number, sat: number, light: number, alpha: number) => {
+  const noisePass = (
+    count: number,
+    sat: number,
+    light: number,
+    alpha: number
+  ) => {
     ctx.globalAlpha = alpha;
     for (let i = 0; i < count; i++) {
       const x = Math.random() * size;
@@ -126,14 +131,14 @@ const Map: FC = () => {
   return (
     <group>
       {/* Ground only */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[500, 500, 1, 1]} />
         <meshStandardMaterial
-          map={textures.grassMap}
           bumpMap={textures.bumpMap}
           bumpScale={0.03}
-          roughness={1}
+          map={textures.grassMap}
           metalness={0}
+          roughness={1}
         />
       </mesh>
     </group>

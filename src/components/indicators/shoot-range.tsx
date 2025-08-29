@@ -1,16 +1,12 @@
-"use client";
+'use client';
 
-import { useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
-import { BULLET_RANGE } from "@/config/gameplay";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+
+import { BULLET_RANGE } from '@/config/gameplay';
 
 const ShootRange = () => {
-  // Only show in development environment
-  if (process.env.NODE_ENV === 'production') {
-    return null;
-  }
-
   const { scene } = useThree();
   const ringRef = useRef<THREE.Mesh>(null!);
   const playerRef = useRef<THREE.Object3D | null>(null);
@@ -18,7 +14,7 @@ const ShootRange = () => {
 
   useFrame(() => {
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
       if (!playerRef.current) return;
     }
     const p = playerRef.current.getWorldPosition(tmp.set(0, 0, 0));
@@ -27,9 +23,9 @@ const ShootRange = () => {
 
   const r = BULLET_RANGE;
   return (
-    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1000}>
+    <mesh ref={ringRef} renderOrder={1000} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[r - 0.06, r + 0.06, 64]} />
-      <meshBasicMaterial color="#ffcc00" transparent opacity={0.85} />
+      <meshBasicMaterial color="#ffcc00" opacity={0.85} transparent />
     </mesh>
   );
 };

@@ -1,9 +1,11 @@
-import { FC, useEffect } from 'react';
-import { ThreeElements } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
+import { ThreeElements } from '@react-three/fiber';
+import { FC, useEffect } from 'react';
 
-
-const Model: FC<{ url: string } & ThreeElements['group']> = ({ url, ...props }) => {
+const Model: FC<{ url: string } & ThreeElements['group']> = ({
+  url,
+  ...props
+}) => {
   const { scene } = useGLTF(url);
 
   useEffect(() => {

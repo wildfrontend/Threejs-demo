@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useGame } from "@/store/game";
+import { useGame } from '@/store/game';
 
 const AmmoHUD = () => {
   const ammo = useGame((s) => s.ammo);

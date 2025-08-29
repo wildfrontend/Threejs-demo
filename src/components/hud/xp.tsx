@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useGame } from "@/store/game";
-import { MAX_LEVEL } from "@/config/gameplay";
+import { MAX_LEVEL } from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 const XPHUD = () => {
   const level = useGame((s) => s.level);
@@ -9,7 +9,9 @@ const XPHUD = () => {
   const xpToNext = useGame((s) => s.xpToNext);
 
   const isMax = level >= MAX_LEVEL || xpToNext === 0;
-  const pct = isMax ? 1 : Math.max(0, Math.min(1, xpToNext > 0 ? xp / xpToNext : 0));
+  const pct = isMax
+    ? 1
+    : Math.max(0, Math.min(1, xpToNext > 0 ? xp / xpToNext : 0));
 
   return (
     <div className="pointer-events-none absolute top-4 left-24">
@@ -23,7 +25,7 @@ const XPHUD = () => {
           />
         </div>
         <span className="text-[10px] text-gray-300/70 font-mono">
-          {isMax ? "MAX" : `${xp}/${xpToNext}`}
+          {isMax ? 'MAX' : `${xp}/${xpToNext}`}
         </span>
       </div>
     </div>

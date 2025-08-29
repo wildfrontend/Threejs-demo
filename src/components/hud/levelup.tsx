@@ -1,21 +1,51 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useGame } from "@/store/game";
-import { MOVE_SPEED_BASE, BASE_MAX_HEALTH, BASE_AMMO_CAPACITY } from "@/config/gameplay";
+import { useEffect, useState } from 'react';
+
+import {
+  BASE_AMMO_CAPACITY,
+  BASE_MAX_HEALTH,
+  MOVE_SPEED_BASE,
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 type Upgrade = {
-  key: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed" | "ammoCapacity";
+  key:
+    | 'maxHealth'
+    | 'bulletDamage'
+    | 'bulletCount'
+    | 'moveSpeed'
+    | 'ammoCapacity';
   title: string;
   desc: string;
 };
 
 const ALL_UPGRADES: Upgrade[] = [
-  { key: "maxHealth", title: "增加一顆心", desc: "最大生命值 +1（LV5：上限×2，並回滿）" },
-  { key: "bulletDamage", title: "子彈更痛", desc: "子彈傷害 +1（LV5：子彈可穿透）" },
-  { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散（LV5：360° 射擊）" },
-  { key: "moveSpeed", title: "移動更快", desc: "移動速度 +10%（LV5：空白鍵無敵2s，冷卻30s，面板顯示）" },
-  { key: "ammoCapacity", title: "更多彈藥", desc: "彈藥容量 +1（並回滿；LV5：無限彈藥）" },
+  {
+    key: 'maxHealth',
+    title: '增加一顆心',
+    desc: '最大生命值 +1（LV5：上限×2，並回滿）',
+  },
+  {
+    key: 'bulletDamage',
+    title: '子彈更痛',
+    desc: '子彈傷害 +1（LV5：子彈可穿透）',
+  },
+  {
+    key: 'bulletCount',
+    title: '散彈更多',
+    desc: '每次多發 1 顆，扇形擴散（LV5：360° 射擊）',
+  },
+  {
+    key: 'moveSpeed',
+    title: '移動更快',
+    desc: '移動速度 +10%（LV5：空白鍵無敵2s，冷卻30s，面板顯示）',
+  },
+  {
+    key: 'ammoCapacity',
+    title: '更多彈藥',
+    desc: '彈藥容量 +1（並回滿；LV5：無限彈藥）',
+  },
 ];
 
 function sampleUnique<T>(arr: T[], n: number) {
@@ -50,22 +80,30 @@ const LevelUpHUD = () => {
   // When there's pending upgrades, roll 3 random choices (filter out maxed LV5)
   useEffect(() => {
     if (upgradePending > 0) {
-      const getLv = (key: Upgrade["key"]) =>
-        key === "maxHealth"
+      const getLv = (key: Upgrade['key']) =>
+        key === 'maxHealth'
           ? Math.max(1, maxHealth - BASE_MAX_HEALTH + 1)
-          : key === "bulletDamage"
-          ? Math.max(1, bulletDamage)
-          : key === "bulletCount"
-          ? Math.max(1, bulletCount)
-          : key === "ammoCapacity"
-          ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
-          : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
+          : key === 'bulletDamage'
+            ? Math.max(1, bulletDamage)
+            : key === 'bulletCount'
+              ? Math.max(1, bulletCount)
+              : key === 'ammoCapacity'
+                ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
+                : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
       const available = ALL_UPGRADES.filter((u) => getLv(u.key) < 5);
       setChoices(sampleUnique(available.length ? available : ALL_UPGRADES, 3));
     } else {
       setChoices([]);
     }
-  }, [upgradePending, level, maxHealth, bulletDamage, bulletCount, ammoCapacity, moveSpeedUpgrades]);
+  }, [
+    upgradePending,
+    level,
+    maxHealth,
+    bulletDamage,
+    bulletCount,
+    ammoCapacity,
+    moveSpeedUpgrades,
+  ]);
 
   if (!paused || gameOver || upgradePending <= 0) return null;
 
@@ -75,45 +113,50 @@ const LevelUpHUD = () => {
     setTimeout(() => {
       if (useGame.getState().upgradePending > 0) {
         const s = useGame.getState();
-        const getLv = (key: Upgrade["key"]) =>
-          key === "maxHealth"
+        const getLv = (key: Upgrade['key']) =>
+          key === 'maxHealth'
             ? Math.max(1, s.maxHealth - BASE_MAX_HEALTH + 1)
-            : key === "bulletDamage"
-            ? Math.max(1, s.bulletDamage)
-            : key === "bulletCount"
-            ? Math.max(1, s.bulletCount)
-            : key === "ammoCapacity"
-            ? Math.max(1, s.ammoCapacity - BASE_AMMO_CAPACITY + 1)
-            : Math.max(1, (s.moveSpeedUpgrades ?? 0) + 1);
+            : key === 'bulletDamage'
+              ? Math.max(1, s.bulletDamage)
+              : key === 'bulletCount'
+                ? Math.max(1, s.bulletCount)
+                : key === 'ammoCapacity'
+                  ? Math.max(1, s.ammoCapacity - BASE_AMMO_CAPACITY + 1)
+                  : Math.max(1, (s.moveSpeedUpgrades ?? 0) + 1);
         const available = ALL_UPGRADES.filter((x) => getLv(x.key) < 5);
-        setChoices(sampleUnique(available.length ? available : ALL_UPGRADES, 3));
+        setChoices(
+          sampleUnique(available.length ? available : ALL_UPGRADES, 3)
+        );
       }
     }, 0);
   };
 
   // Build "already chosen" list (only show items with Lv >= 2)
-  const getLv = (key: Upgrade["key"]) =>
-    key === "maxHealth"
+  const getLv = (key: Upgrade['key']) =>
+    key === 'maxHealth'
       ? Math.max(1, maxHealth - BASE_MAX_HEALTH + 1)
-      : key === "bulletDamage"
-      ? Math.max(1, bulletDamage)
-      : key === "bulletCount"
-      ? Math.max(1, bulletCount)
-      : key === "ammoCapacity"
-      ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
-      : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
+      : key === 'bulletDamage'
+        ? Math.max(1, bulletDamage)
+        : key === 'bulletCount'
+          ? Math.max(1, bulletCount)
+          : key === 'ammoCapacity'
+            ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
+            : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
 
   const picked = ((): { title: string; lv: number }[] => {
-    return ALL_UPGRADES
-      .map((u) => ({ title: u.title, lv: getLv(u.key) }))
-      .filter((x) => x.lv >= 2);
+    return ALL_UPGRADES.map((u) => ({
+      title: u.title,
+      lv: getLv(u.key),
+    })).filter((x) => x.lv >= 2);
   })();
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
       <div className="pointer-events-auto w-[560px] max-w-[92vw] rounded-lg bg-zinc-900/90 p-5 shadow-xl border border-white/10">
         <div className="mb-3 flex items-baseline justify-between">
-          <h3 className="text-lg font-semibold text-white">升級！選擇一項強化</h3>
+          <h3 className="text-lg font-semibold text-white">
+            升級！選擇一項強化
+          </h3>
           <span className="text-xs text-white/60">Lv {level}</span>
         </div>
         <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
@@ -146,20 +189,20 @@ const LevelUpHUD = () => {
         <div className="grid grid-cols-1 gap-3">
           {choices.map((c) => {
             const lv =
-              c.key === "maxHealth"
+              c.key === 'maxHealth'
                 ? Math.max(1, maxHealth - BASE_MAX_HEALTH + 1)
-                : c.key === "bulletDamage"
-                ? Math.max(1, bulletDamage)
-                : c.key === "bulletCount"
-                ? Math.max(1, bulletCount)
-                : c.key === "ammoCapacity"
-                ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
-                : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
+                : c.key === 'bulletDamage'
+                  ? Math.max(1, bulletDamage)
+                  : c.key === 'bulletCount'
+                    ? Math.max(1, bulletCount)
+                    : c.key === 'ammoCapacity'
+                      ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
+                      : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
             return (
               <button
+                className="rounded-md border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-3 text-left"
                 key={c.key}
                 onClick={() => onPick(c)}
-                className="rounded-md border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-3 text-left"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-white font-medium">{c.title}</div>
@@ -176,8 +219,8 @@ const LevelUpHUD = () => {
             <div className="flex flex-wrap gap-2">
               {picked.map((p) => (
                 <span
-                  key={p.title}
                   className="rounded bg-white/10 px-2 py-1 text-[11px] text-white/90"
+                  key={p.title}
                 >
                   {p.title} · Lv {p.lv}
                 </span>

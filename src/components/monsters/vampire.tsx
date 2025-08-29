@@ -1,25 +1,26 @@
-"use client";
+'use client';
 
-import { useGLTF } from "@react-three/drei";
+import { useGLTF } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+
 import {
+  BOUNCE_RETREAT_SPEED_MULTIPLIER,
+  BULLET_SIZE,
   COLLISION_RADIUS,
   HIT_BOUNCE_BACK,
   HIT_BOUNCE_PAUSE,
-  BOUNCE_RETREAT_SPEED_MULTIPLIER,
-  VAMPIRE_SPEED,
-  VAMPIRE_ATTACK,
-  VAMPIRE_HP,
-  VAMPIRE_ATTACK_RANGE,
   MONSTER_ATTACK_COOLDOWN,
-  VAMPIRE_BULLET_SPEED,
-  BULLET_SIZE,
+  VAMPIRE_ATTACK,
+  VAMPIRE_ATTACK_RANGE,
   VAMPIRE_BULLET_DAMAGE,
-} from "@/config/gameplay";
-import { useGame } from "@/store/game";
+  VAMPIRE_BULLET_SPEED,
+  VAMPIRE_HP,
+  VAMPIRE_SPEED,
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 type VampireProps = {
   position?: [number, number, number];
@@ -27,10 +28,17 @@ type VampireProps = {
   name?: string;
 };
 
-const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampire" }: VampireProps) => {
+const Vampire = ({
+  position = [-8, 0, -8],
+  speed = VAMPIRE_SPEED,
+  name = 'vampire',
+}: VampireProps) => {
   const group = useRef<THREE.Group>(null!);
-  const gltf = useGLTF("/assets/character-vampire.glb");
-  const model = useMemo(() => SkeletonUtils.clone(gltf.scene) as THREE.Group, [gltf.scene]);
+  const gltf = useGLTF('/assets/character-vampire.glb');
+  const model = useMemo(
+    () => SkeletonUtils.clone(gltf.scene) as THREE.Group,
+    [gltf.scene]
+  );
   const { scene } = useThree();
 
   // Cache helpers
@@ -41,7 +49,9 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
   const retreatTimer = useRef(0); // seconds remaining to retreat
   const retreatDir = useRef(new THREE.Vector3()); // direction to move while retreating (backwards)
   const atkTimer = useRef(0);
-  const bulletsRef = useRef<{ position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]>([]);
+  const bulletsRef = useRef<
+    { position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]
+  >([]);
   const imRef = useRef<THREE.InstancedMesh>(null!);
   const tmpObj = useMemo(() => new THREE.Object3D(), []);
 
@@ -65,7 +75,7 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     if (gameGet().paused) return;
     // Track player
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
     if (!playerRef.current || !group.current) return;
 
@@ -88,7 +98,8 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     const R = gameGet().hitRadius || COLLISION_RADIUS;
 
     // Timers
-    if (atkTimer.current > 0) atkTimer.current = Math.max(0, atkTimer.current - delta);
+    if (atkTimer.current > 0)
+      atkTimer.current = Math.max(0, atkTimer.current - delta);
 
     // If retreating, move backwards for a short duration
     if (retreatTimer.current > 0) {
@@ -112,7 +123,11 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
     if (dist > R && dist <= VAMPIRE_ATTACK_RANGE && atkTimer.current <= 0) {
       const target = p.clone();
       const dirCenter = target.clone().sub(start).setY(0).normalize();
-      bulletsRef.current.push({ position: start.clone(), direction: dirCenter, traveled: 0 });
+      bulletsRef.current.push({
+        position: start.clone(),
+        direction: dirCenter,
+        traveled: 0,
+      });
       atkTimer.current = MONSTER_ATTACK_COOLDOWN;
     }
 
@@ -190,7 +205,9 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
           const dz = playerPos.z - b.position.z;
           const dXZ = Math.hypot(dx, dz);
           if (dXZ <= hitR + BULLET_SIZE * 0.5) {
-            try { gameGet().damage?.(VAMPIRE_BULLET_DAMAGE); } catch {}
+            try {
+              gameGet().damage?.(VAMPIRE_BULLET_DAMAGE);
+            } catch {}
             keep = false;
           }
         }
@@ -216,10 +233,14 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
 
   return (
     <>
-      <group ref={group} position={position} name={name}>
+      <group name={name} position={position} ref={group}>
         <primitive object={model} />
       </group>
-      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, 128]} frustumCulled={false}>
+      <instancedMesh
+        args={[undefined as any, undefined as any, 128]}
+        frustumCulled={false}
+        ref={imRef}
+      >
         <sphereGeometry args={[BULLET_SIZE * 1.0, 12, 12]} />
         <meshBasicMaterial color="#ff4d4d" toneMapped={false} />
       </instancedMesh>
@@ -227,6 +248,6 @@ const Vampire = ({ position = [-8, 0, -8], speed = VAMPIRE_SPEED, name = "vampir
   );
 };
 
-useGLTF.preload("/assets/character-vampire.glb");
+useGLTF.preload('/assets/character-vampire.glb');
 
 export default Vampire;

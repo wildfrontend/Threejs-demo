@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
-import { useGame } from "@/store/game";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 
-import Skeleton from "@/components/monsters/skeleton";
-import Zombie from "@/components/monsters/zombie";
-import Ghost from "@/components/monsters/ghost";
-import Vampire from "@/components/monsters/vampire";
+import Ghost from '@/components/monsters/ghost';
+import Skeleton from '@/components/monsters/skeleton';
+import Vampire from '@/components/monsters/vampire';
+import Zombie from '@/components/monsters/zombie';
+import { useGame } from '@/store/game';
 
-type MonsterKind = "skeleton" | "zombie" | "ghost" | "vampire";
+type MonsterKind = 'skeleton' | 'zombie' | 'ghost' | 'vampire';
 
 type Slot = {
   id: number;
@@ -35,7 +35,13 @@ const COMPONENTS: Record<MonsterKind, any> = {
   vampire: Vampire,
 };
 
-const GenericSpawner = ({ kind, count, spawnMin, spawnMax, respawnDelay }: Props) => {
+const GenericSpawner = ({
+  kind,
+  count,
+  spawnMin,
+  spawnMax,
+  respawnDelay,
+}: Props) => {
   const { scene } = useThree();
   const prefix = kind;
   const gameGet = useRef(useGame.getState).current;
@@ -53,10 +59,13 @@ const GenericSpawner = ({ kind, count, spawnMin, spawnMax, respawnDelay }: Props
   const nowRef = useRef(0);
   const tmpVec = useMemo(() => new THREE.Vector3(), []);
 
-  const randomSpawnPosAroundPlayer = (scene: THREE.Scene, tmp: THREE.Vector3): [number, number, number] => {
+  const randomSpawnPosAroundPlayer = (
+    scene: THREE.Scene,
+    tmp: THREE.Vector3
+  ): [number, number, number] => {
     let center = tmp.set(0, 0, 0);
     try {
-      const player = scene.getObjectByName("player");
+      const player = scene.getObjectByName('player');
       if (player) center = player.getWorldPosition(tmp.set(0, 0, 0));
     } catch {}
     const angle = Math.random() * Math.PI * 2;
@@ -136,8 +145,12 @@ const GenericSpawner = ({ kind, count, spawnMin, spawnMax, respawnDelay }: Props
         if (slot.alive) {
           try {
             const obj = scene.getObjectByName(`${prefix}-${slot.id}`) as any;
-            const inGrace = slot.justSpawnedAt !== null && nowRef.current - slot.justSpawnedAt < 0.5;
-            const killed = !inGrace && (!obj || obj.userData?.killed || obj.visible === false);
+            const inGrace =
+              slot.justSpawnedAt !== null &&
+              nowRef.current - slot.justSpawnedAt < 0.5;
+            const killed =
+              !inGrace &&
+              (!obj || obj.userData?.killed || obj.visible === false);
             if (killed) {
               slot.alive = false;
               slot.respawnAt = nowRef.current + respawnDelay;
@@ -182,7 +195,11 @@ const GenericSpawner = ({ kind, count, spawnMin, spawnMax, respawnDelay }: Props
     <group>
       {slots.map((slot) =>
         slot.alive ? (
-          <Comp key={slot.id} position={slot.position} name={`${prefix}-${slot.id}`} />
+          <Comp
+            key={slot.id}
+            name={`${prefix}-${slot.id}`}
+            position={slot.position}
+          />
         ) : null
       )}
     </group>
@@ -190,4 +207,3 @@ const GenericSpawner = ({ kind, count, spawnMin, spawnMax, respawnDelay }: Props
 };
 
 export default GenericSpawner;
-

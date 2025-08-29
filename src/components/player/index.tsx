@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
 import { useGLTF, useKeyboardControls } from '@react-three/drei';
-import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+
 import { useGame } from '@/store/game';
 
 type Controls = {
@@ -33,7 +34,7 @@ const Player = () => {
   useFrame((_, delta) => {
     // Update invincibility timers
     gameGet().updateInvincible?.(delta);
-    
+
     if (gameGet().paused) return;
     const { forward, backward, left, right, shoot } = get();
     // Edge trigger for invincibility
@@ -62,7 +63,7 @@ const Player = () => {
   });
 
   return (
-    <group ref={group} position={[0, 0, 0]} name="player"> 
+    <group name="player" position={[0, 0, 0]} ref={group}>
       <primitive object={scene} />
     </group>
   );

@@ -1,17 +1,18 @@
-"use client";
+'use client';
 
-import { create } from "zustand";
+import { create } from 'zustand';
+
 import {
   AMMO_CAPACITY,
+  BASE_MAX_HEALTH,
   COLLISION_RADIUS,
-  XP_BASE,
-  XP_PER_KILL,
-  XP_STEP,
   MAX_LEVEL,
   MOVE_SPEED_BASE,
   MOVE_SPEED_STEP,
-  BASE_MAX_HEALTH,
-} from "@/config/gameplay";
+  XP_BASE,
+  XP_PER_KILL,
+  XP_STEP,
+} from '@/config/gameplay';
 
 type GameState = {
   maxHealth: number;
@@ -54,7 +55,14 @@ type GameState = {
   addXp: (amount?: number) => void;
   resetXp: () => void;
   upgradePending: number; // number of upgrade choices to make
-  applyUpgrade: (kind: "maxHealth" | "bulletDamage" | "bulletCount" | "moveSpeed" | "ammoCapacity") => void;
+  applyUpgrade: (
+    kind:
+      | 'maxHealth'
+      | 'bulletDamage'
+      | 'bulletCount'
+      | 'moveSpeed'
+      | 'ammoCapacity'
+  ) => void;
   // Upgradeable stats
   bulletDamage: number;
   bulletCount: number;
@@ -144,13 +152,19 @@ export const useGame = create<GameState>((set, get) => ({
       const { invincibleCooldown, moveSpeedUpgrades, paused } = get() as any;
       // unlock at LV5 (moveSpeedUpgrades + 1 >= 5)
       const unlocked = (moveSpeedUpgrades ?? 0) + 1 >= 5;
-      if (!unlocked || paused || (invincibleCooldown ?? 0) > 0) return {} as any;
-      return { invincible: true, invincibleFor: 2.0, invincibleCooldown: 30.0 } as any;
+      if (!unlocked || paused || (invincibleCooldown ?? 0) > 0)
+        return {} as any;
+      return {
+        invincible: true,
+        invincibleFor: 2.0,
+        invincibleCooldown: 30.0,
+      } as any;
     }),
   updateInvincible: (delta: number) =>
     set(() => {
       let { invincible, invincibleFor, invincibleCooldown } = get() as any;
-      if (invincibleCooldown > 0) invincibleCooldown = Math.max(0, invincibleCooldown - delta);
+      if (invincibleCooldown > 0)
+        invincibleCooldown = Math.max(0, invincibleCooldown - delta);
       if (invincible) {
         invincibleFor = Math.max(0, invincibleFor - delta);
         if (invincibleFor <= 0) invincible = false;
@@ -222,7 +236,8 @@ export const useGame = create<GameState>((set, get) => ({
     const prevLevel = level;
     // At cap: enforce cap state and ignore gains
     if (level >= MAX_LEVEL) {
-      if (xp !== 0 || xpToNext !== 0) set(() => ({ xp: 0, level: MAX_LEVEL, xpToNext: 0 }));
+      if (xp !== 0 || xpToNext !== 0)
+        set(() => ({ xp: 0, level: MAX_LEVEL, xpToNext: 0 }));
       return;
     }
     xp += amount;
@@ -241,46 +256,60 @@ export const useGame = create<GameState>((set, get) => ({
     set(() => ({ xp, level, xpToNext }));
     if (leveledUp && level > prevLevel) {
       const gained = level - prevLevel;
-      set(() => ({ paused: true, upgradePending: get().upgradePending + gained }));
+      set(() => ({
+        paused: true,
+        upgradePending: get().upgradePending + gained,
+      }));
     }
   },
-  resetXp: () => set(() => ({ level: 1, xp: 0, xpToNext: xpNeededForLevel(1) })),
+  resetXp: () =>
+    set(() => ({ level: 1, xp: 0, xpToNext: xpNeededForLevel(1) })),
   applyUpgrade: (kind) =>
     set(() => {
       const s = get();
-      let { maxHealth, health, bulletDamage, bulletCount, moveSpeed, ammoCapacity, ammo, upgradePending, paused } = s as any;
+      let {
+        maxHealth,
+        health,
+        bulletDamage,
+        bulletCount,
+        moveSpeed,
+        ammoCapacity,
+        ammo,
+        upgradePending,
+        paused,
+      } = s as any;
       switch (kind) {
-        case "maxHealth":
+        case 'maxHealth':
           maxHealth = Math.max(1, (maxHealth ?? 1) + 1);
           // Refill to full when gaining a heart
           health = maxHealth;
           // At LV5, double max health once
           {
-            const heartLv = (maxHealth - BASE_MAX_HEALTH) + 1;
+            const heartLv = maxHealth - BASE_MAX_HEALTH + 1;
             if (heartLv === 5) {
               maxHealth = Math.max(1, maxHealth * 2);
               health = maxHealth;
             }
           }
           break;
-        case "bulletDamage":
+        case 'bulletDamage':
           bulletDamage = Math.min(5, (bulletDamage ?? 1) + 1);
           break;
-        case "bulletCount":
+        case 'bulletCount':
           bulletCount = Math.min(5, Math.max(1, (bulletCount ?? 1) + 1));
           break;
-        case "ammoCapacity":
+        case 'ammoCapacity':
           ammoCapacity = Math.max(1, (ammoCapacity ?? 1) + 1);
           // Refill to the new capacity
           ammo = ammoCapacity;
           // At LV5, grant infinite ammo (no reload / no consumption)
-          const ammoLv = (ammoCapacity - AMMO_CAPACITY) + 1;
+          const ammoLv = ammoCapacity - AMMO_CAPACITY + 1;
           if (ammoLv >= 5) {
             (s as any).infiniteAmmo = true;
             (s as any).reloading = false;
           }
           break;
-        case "moveSpeed":
+        case 'moveSpeed':
           // Use formula: base * (1 + step * count); clamp to LV5 (count<=4)
           const newCountRaw = (s as any).moveSpeedUpgrades + 1;
           const newCount = Math.min(4, newCountRaw);
@@ -299,6 +328,16 @@ export const useGame = create<GameState>((set, get) => ({
       }
       upgradePending = Math.max(0, (upgradePending ?? 0) - 1);
       if (upgradePending === 0 && paused) paused = false;
-      return { maxHealth, health, bulletDamage, bulletCount, moveSpeed, ammoCapacity, ammo, upgradePending, paused };
+      return {
+        maxHealth,
+        health,
+        bulletDamage,
+        bulletCount,
+        moveSpeed,
+        ammoCapacity,
+        ammo,
+        upgradePending,
+        paused,
+      };
     }),
 }));

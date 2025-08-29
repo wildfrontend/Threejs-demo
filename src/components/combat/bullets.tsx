@@ -9,15 +9,15 @@ import {
   BULLET_RANGE,
   BULLET_SIZE,
   BULLET_SPEED,
-  RELOAD_TIME,
   BULLET_SPREAD_DEG,
-  SKELETON_HP,
-  ZOMBIE_HP,
-  GHOST_HP,
-  VAMPIRE_HP,
   FULL_CIRCLE_BULLETS,
   FULL_CIRCLE_DAMAGE_SCALE,
+  GHOST_HP,
   HEART_DROP_CHANCE,
+  RELOAD_TIME,
+  SKELETON_HP,
+  VAMPIRE_HP,
+  ZOMBIE_HP,
 } from '@/config/gameplay';
 import { useGame } from '@/store/game';
 
@@ -77,10 +77,14 @@ const Bullets = () => {
           if (!obj?.name) return;
           const n = obj.name.toLowerCase();
           const isMonster =
-            n === 'zombie' || n.startsWith('zombie') ||
-            n === 'skeleton' || n.startsWith('skeleton') ||
-            n === 'ghost' || n.startsWith('ghost') ||
-            n === 'vampire' || n.startsWith('vampire');
+            n === 'zombie' ||
+            n.startsWith('zombie') ||
+            n === 'skeleton' ||
+            n.startsWith('skeleton') ||
+            n === 'ghost' ||
+            n.startsWith('ghost') ||
+            n === 'vampire' ||
+            n.startsWith('vampire');
           if (!isMonster) return;
           const wpos = obj.getWorldPosition(new THREE.Vector3());
           // Aim at the enemy using player's center height to avoid vertical mismatch
@@ -103,7 +107,9 @@ const Bullets = () => {
     const count = Math.max(1, gameGet().bulletCount ?? 1);
     const baseDamage = gameGet().bulletDamage ?? 1;
     const radial = count >= 5;
-    const shotDamage = radial ? Math.max(1, Math.floor(baseDamage * FULL_CIRCLE_DAMAGE_SCALE)) : baseDamage;
+    const shotDamage = radial
+      ? Math.max(1, Math.floor(baseDamage * FULL_CIRCLE_DAMAGE_SCALE))
+      : baseDamage;
     const spreadRad = THREE.MathUtils.degToRad(BULLET_SPREAD_DEG);
     // Compute yaw of center direction
     const yaw = Math.atan2(dirCenter.x, dirCenter.z);
@@ -117,17 +123,32 @@ const Bullets = () => {
       for (let i = 0; i < N; i++) {
         const angle = (i / N) * Math.PI * 2;
         const dir = makeDirFromYaw(angle);
-        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0, damage: shotDamage });
+        bulletsRef.current.push({
+          position: start.clone(),
+          direction: dir,
+          traveled: 0,
+          damage: shotDamage,
+        });
       }
     } else if (count === 1) {
-      bulletsRef.current.push({ position: start, direction: dirCenter, traveled: 0, damage: shotDamage });
+      bulletsRef.current.push({
+        position: start,
+        direction: dirCenter,
+        traveled: 0,
+        damage: shotDamage,
+      });
     } else {
       const half = (count - 1) / 2;
       for (let i = 0; i < count; i++) {
         const offsetIndex = i - half; // symmetric around 0
         const angle = yaw + offsetIndex * spreadRad;
         const dir = makeDirFromYaw(angle);
-        bulletsRef.current.push({ position: start.clone(), direction: dir, traveled: 0, damage: shotDamage });
+        bulletsRef.current.push({
+          position: start.clone(),
+          direction: dir,
+          traveled: 0,
+          damage: shotDamage,
+        });
       }
     }
   };
@@ -208,10 +229,14 @@ const Bullets = () => {
             if (!obj?.name) return;
             const n2 = obj.name.toLowerCase();
             const isMonster2 =
-              n2 === 'zombie' || n2.startsWith('zombie') ||
-              n2 === 'skeleton' || n2.startsWith('skeleton') ||
-              n2 === 'ghost' || n2.startsWith('ghost') ||
-              n2 === 'vampire' || n2.startsWith('vampire');
+              n2 === 'zombie' ||
+              n2.startsWith('zombie') ||
+              n2 === 'skeleton' ||
+              n2.startsWith('skeleton') ||
+              n2 === 'ghost' ||
+              n2.startsWith('ghost') ||
+              n2 === 'vampire' ||
+              n2.startsWith('vampire');
             if (!isMonster2) return;
             if (!(obj as any).visible) return;
 
@@ -223,18 +248,19 @@ const Bullets = () => {
             if (dist <= radius + BULLET_SIZE * 0.5) {
               const z: any = obj as any;
               const name = (z.name || '').toLowerCase();
-              const defaultMax = name.startsWith('zombie') || name === 'zombie'
-                ? ZOMBIE_HP
-                : name.startsWith('skeleton') || name === 'skeleton'
-                ? SKELETON_HP
-                : name.startsWith('ghost') || name === 'ghost'
-                ? GHOST_HP
-                : name.startsWith('vampire') || name === 'vampire'
-                ? VAMPIRE_HP
-                : 2;
+              const defaultMax =
+                name.startsWith('zombie') || name === 'zombie'
+                  ? ZOMBIE_HP
+                  : name.startsWith('skeleton') || name === 'skeleton'
+                    ? SKELETON_HP
+                    : name.startsWith('ghost') || name === 'ghost'
+                      ? GHOST_HP
+                      : name.startsWith('vampire') || name === 'vampire'
+                        ? VAMPIRE_HP
+                        : 2;
               const maxHp = z.userData?.maxHp ?? defaultMax;
               const curHp = z.userData?.hp ?? maxHp;
-              const dmg = (b as any).damage ?? (gameGet().bulletDamage ?? 1);
+              const dmg = (b as any).damage ?? gameGet().bulletDamage ?? 1;
               const nextHp = Math.max(0, curHp - dmg);
               z.userData = { ...z.userData, hp: nextHp, maxHp };
               if (!pierce) {
@@ -251,8 +277,10 @@ const Bullets = () => {
                 // Drop chance: vampire always drop, others by chance
                 try {
                   const nameLow = name;
-                  const isVampire = nameLow === 'vampire' || nameLow.startsWith('vampire');
-                  const drop = isVampire || Math.random() < (HEART_DROP_CHANCE as number);
+                  const isVampire =
+                    nameLow === 'vampire' || nameLow.startsWith('vampire');
+                  const drop =
+                    isVampire || Math.random() < (HEART_DROP_CHANCE as number);
                   if (drop) {
                     const c = sphere.center;
                     useGame.getState().addHeartDrop?.([c.x, 0, c.z]);
@@ -293,22 +321,22 @@ const Bullets = () => {
   return (
     <>
       <instancedMesh
-        ref={imRef}
         args={[undefined as any, undefined as any, MAX_BULLETS]}
         frustumCulled={false}
+        ref={imRef}
       >
         <sphereGeometry args={[BULLET_SIZE, 12, 12]} />
         <meshBasicMaterial color="#fff46b" toneMapped={false} />
       </instancedMesh>
       {false && (
-        <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
+        <mesh frustumCulled={false} ref={muzzleHelperRef} renderOrder={1000}>
           <sphereGeometry args={[BULLET_SIZE * 1.2, 8, 8]} />
           <meshBasicMaterial
             color="#ff3bd1"
-            toneMapped={false}
             depthTest={false}
-            transparent
             opacity={0.9}
+            toneMapped={false}
+            transparent
           />
         </mesh>
       )}

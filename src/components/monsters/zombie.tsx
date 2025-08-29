@@ -1,20 +1,21 @@
-"use client";
+'use client';
 
-import { useGLTF } from "@react-three/drei";
+import { useGLTF } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+
 import {
+  BOUNCE_RETREAT_SPEED_MULTIPLIER,
   COLLISION_RADIUS,
   HIT_BOUNCE_BACK,
   HIT_BOUNCE_PAUSE,
-  BOUNCE_RETREAT_SPEED_MULTIPLIER,
-  ZOMBIE_SPEED,
   ZOMBIE_ATTACK,
   ZOMBIE_HP,
-} from "@/config/gameplay";
-import { useGame } from "@/store/game";
+  ZOMBIE_SPEED,
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 type ZombieProps = {
   position?: [number, number, number];
@@ -22,10 +23,17 @@ type ZombieProps = {
   name?: string;
 };
 
-const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }: ZombieProps) => {
+const Zombie = ({
+  position = [5, 0, -5],
+  speed = ZOMBIE_SPEED,
+  name = 'zombie',
+}: ZombieProps) => {
   const group = useRef<THREE.Group>(null!);
-  const gltf = useGLTF("/assets/character-zombie.glb");
-  const model = useMemo(() => SkeletonUtils.clone(gltf.scene) as THREE.Group, [gltf.scene]);
+  const gltf = useGLTF('/assets/character-zombie.glb');
+  const model = useMemo(
+    () => SkeletonUtils.clone(gltf.scene) as THREE.Group,
+    [gltf.scene]
+  );
   const { scene } = useThree();
 
   // Cache helpers
@@ -54,7 +62,7 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
     if (gameGet().paused) return;
     // Track player
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
     if (!playerRef.current || !group.current) return;
 
@@ -94,7 +102,6 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
       return;
     }
 
- 
     if (dist > 1e-4) {
       // Try to move towards player
       const dir = toPlayer.clone().normalize();
@@ -129,12 +136,12 @@ const Zombie = ({ position = [5, 0, -5], speed = ZOMBIE_SPEED, name = "zombie" }
   });
 
   return (
-    <group ref={group} position={position} name={name}>
+    <group name={name} position={position} ref={group}>
       <primitive object={model} />
     </group>
   );
 };
 
-useGLTF.preload("/assets/character-zombie.glb");
+useGLTF.preload('/assets/character-zombie.glb');
 
 export default Zombie;

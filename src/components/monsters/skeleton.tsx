@@ -1,20 +1,21 @@
-"use client";
+'use client';
 
-import { useGLTF } from "@react-three/drei";
+import { useGLTF } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+
 import {
+  BOUNCE_RETREAT_SPEED_MULTIPLIER,
   COLLISION_RADIUS,
   HIT_BOUNCE_BACK,
   HIT_BOUNCE_PAUSE,
-  BOUNCE_RETREAT_SPEED_MULTIPLIER,
-  SKELETON_SPEED,
   SKELETON_ATTACK,
   SKELETON_HP,
-} from "@/config/gameplay";
-import { useGame } from "@/store/game";
+  SKELETON_SPEED,
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 type SkeletonProps = {
   position?: [number, number, number];
@@ -22,10 +23,17 @@ type SkeletonProps = {
   name?: string;
 };
 
-const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skeleton" }: SkeletonProps) => {
+const Skeleton = ({
+  position = [-5, 0, 5],
+  speed = SKELETON_SPEED,
+  name = 'skeleton',
+}: SkeletonProps) => {
   const group = useRef<THREE.Group>(null!);
-  const gltf = useGLTF("/assets/character-skeleton.glb");
-  const model = useMemo(() => SkeletonUtils.clone(gltf.scene) as THREE.Group, [gltf.scene]);
+  const gltf = useGLTF('/assets/character-skeleton.glb');
+  const model = useMemo(
+    () => SkeletonUtils.clone(gltf.scene) as THREE.Group,
+    [gltf.scene]
+  );
   const { scene } = useThree();
 
   // Cache helpers
@@ -45,7 +53,11 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
     });
     if (group.current) {
       const g: any = group.current;
-      g.userData = { ...(g.userData || {}), hp: SKELETON_HP, maxHp: SKELETON_HP };
+      g.userData = {
+        ...(g.userData || {}),
+        hp: SKELETON_HP,
+        maxHp: SKELETON_HP,
+      };
     }
   }, [model]);
 
@@ -53,7 +65,7 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
     if (gameGet().paused) return;
     // Track player
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
     if (!playerRef.current || !group.current) return;
 
@@ -127,12 +139,12 @@ const Skeleton = ({ position = [-5, 0, 5], speed = SKELETON_SPEED, name = "skele
   });
 
   return (
-    <group ref={group} position={position} name={name}>
+    <group name={name} position={position} ref={group}>
       <primitive object={model} />
     </group>
   );
 };
 
-useGLTF.preload("/assets/character-skeleton.glb");
+useGLTF.preload('/assets/character-skeleton.glb');
 
 export default Skeleton;

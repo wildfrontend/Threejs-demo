@@ -19,32 +19,32 @@ const Director = () => {
   return (
     <group>
       <GenericSpawner
-        kind="skeleton"
         count={skeletonCount}
-        spawnMin={10}
-        spawnMax={20}
+        kind="skeleton"
         respawnDelay={1.5}
+        spawnMax={20}
+        spawnMin={10}
       />
       <GenericSpawner
-        kind="ghost"
         count={ghostCount}
-        spawnMin={12}
-        spawnMax={22}
+        kind="ghost"
         respawnDelay={2.5}
+        spawnMax={22}
+        spawnMin={12}
       />
       <GenericSpawner
-        kind="zombie"
         count={zombieCount}
-        spawnMin={14}
-        spawnMax={24}
+        kind="zombie"
         respawnDelay={3.5}
+        spawnMax={24}
+        spawnMin={14}
       />
       <GenericSpawner
-        kind="vampire"
         count={vampireCount}
-        spawnMin={18}
-        spawnMax={26}
+        kind="vampire"
         respawnDelay={10}
+        spawnMax={26}
+        spawnMin={18}
       />
     </group>
   );

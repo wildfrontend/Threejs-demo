@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useGame } from "@/store/game";
+import { useGame } from '@/store/game';
 
 const KillsHUD = () => {
   const kills = useGame((s) => s.kills);
@@ -16,5 +16,3 @@ const KillsHUD = () => {
 };
 
 export default KillsHUD;
-
-

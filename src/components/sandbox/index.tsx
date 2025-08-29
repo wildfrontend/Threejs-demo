@@ -6,12 +6,10 @@ import { Suspense, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import Bullets from '@/components/combat/bullets';
-import CollisionRange from '@/components/indicators/collision-range';
-import ShootRange from '@/components/indicators/shoot-range';
-import Map from '@/components/map';
-import Player from '@/components/player';
 import Director from '@/components/director';
 import Drops from '@/components/items/drops';
+import Map from '@/components/map';
+import Player from '@/components/player';
 
 function Sandbox() {
   return (

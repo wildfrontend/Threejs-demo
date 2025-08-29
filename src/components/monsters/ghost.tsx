@@ -1,24 +1,25 @@
-"use client";
+'use client';
 
-import { useGLTF } from "@react-three/drei";
+import { useGLTF } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+
 import {
+  BOUNCE_RETREAT_SPEED_MULTIPLIER,
+  BULLET_SIZE,
   COLLISION_RADIUS,
+  GHOST_ATTACK,
+  GHOST_ATTACK_RANGE,
+  GHOST_BULLET_SPEED,
+  GHOST_HP,
+  GHOST_SPEED,
   HIT_BOUNCE_BACK,
   HIT_BOUNCE_PAUSE,
-  BOUNCE_RETREAT_SPEED_MULTIPLIER,
-  GHOST_SPEED,
-  GHOST_ATTACK,
-  GHOST_HP,
-  GHOST_ATTACK_RANGE,
   MONSTER_ATTACK_COOLDOWN,
-  GHOST_BULLET_SPEED,
-  BULLET_SIZE,
-} from "@/config/gameplay";
-import { useGame } from "@/store/game";
+} from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 type GhostProps = {
   position?: [number, number, number];
@@ -26,10 +27,17 @@ type GhostProps = {
   name?: string;
 };
 
-const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: GhostProps) => {
+const Ghost = ({
+  position = [8, 0, 8],
+  speed = GHOST_SPEED,
+  name = 'ghost',
+}: GhostProps) => {
   const group = useRef<THREE.Group>(null!);
-  const gltf = useGLTF("/assets/character-ghost.glb");
-  const model = useMemo(() => SkeletonUtils.clone(gltf.scene) as THREE.Group, [gltf.scene]);
+  const gltf = useGLTF('/assets/character-ghost.glb');
+  const model = useMemo(
+    () => SkeletonUtils.clone(gltf.scene) as THREE.Group,
+    [gltf.scene]
+  );
   const { scene } = useThree();
 
   // Cache helpers
@@ -40,7 +48,9 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
   const retreatTimer = useRef(0); // seconds remaining to retreat
   const retreatDir = useRef(new THREE.Vector3()); // direction to move while retreating (backwards)
   const atkTimer = useRef(0);
-  const bulletsRef = useRef<{ position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]>([]);
+  const bulletsRef = useRef<
+    { position: THREE.Vector3; direction: THREE.Vector3; traveled: number }[]
+  >([]);
   const imRef = useRef<THREE.InstancedMesh>(null!);
   const tmpObj = useMemo(() => new THREE.Object3D(), []);
   const muzzleHelperRef = useRef<THREE.Mesh>(null!);
@@ -65,14 +75,14 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     if (gameGet().paused) return;
     // Track player
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
     }
     if (!playerRef.current || !group.current) return;
 
     // If this ghost is flagged killed/hidden, stop spawning new bullets but let existing ones continue
     const gObj: any = group.current;
     const isDead = gObj?.userData?.killed || gObj?.visible === false;
-    
+
     // Skip ghost behavior if dead, but continue bullet updates
     if (isDead) {
       // Ghost is dead - skip movement, attacks, and spawning new bullets
@@ -90,7 +100,8 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
     const holdEps = 0.2;
 
     // Timers
-    if (atkTimer.current > 0) atkTimer.current = Math.max(0, atkTimer.current - delta);
+    if (atkTimer.current > 0)
+      atkTimer.current = Math.max(0, atkTimer.current - delta);
 
     // If retreating, move backwards for a short duration
     if (retreatTimer.current > 0) {
@@ -119,7 +130,11 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
       // Spawn a ghost bullet toward the player from center
       const target = p.clone();
       const dirCenter = target.clone().sub(start).setY(0).normalize();
-      bulletsRef.current.push({ position: start.clone(), direction: dirCenter, traveled: 0 });
+      bulletsRef.current.push({
+        position: start.clone(),
+        direction: dirCenter,
+        traveled: 0,
+      });
       atkTimer.current = MONSTER_ATTACK_COOLDOWN;
     }
 
@@ -185,7 +200,9 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
           const dz = playerPos.z - b.position.z;
           const dXZ = Math.hypot(dx, dz);
           if (dXZ <= hitR + BULLET_SIZE * 0.5) {
-            try { gameGet().damage?.(GHOST_ATTACK); } catch {}
+            try {
+              gameGet().damage?.(GHOST_ATTACK);
+            } catch {}
             keep = false;
           }
         }
@@ -211,17 +228,27 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
 
   return (
     <>
-      <group ref={group} position={position} name={name}>
+      <group name={name} position={position} ref={group}>
         <primitive object={model} />
         {false && (
-          <mesh ref={muzzleHelperRef} frustumCulled={false} renderOrder={1000}>
+          <mesh frustumCulled={false} ref={muzzleHelperRef} renderOrder={1000}>
             <sphereGeometry args={[BULLET_SIZE * 1.1, 8, 8]} />
-            <meshBasicMaterial color="#00e5ff" toneMapped={false} depthTest={false} transparent opacity={0.9} />
+            <meshBasicMaterial
+              color="#00e5ff"
+              depthTest={false}
+              opacity={0.9}
+              toneMapped={false}
+              transparent
+            />
           </mesh>
         )}
       </group>
       {/* Ghost bullets rendered in world space (sibling of ghost) */}
-      <instancedMesh ref={imRef} args={[undefined as any, undefined as any, 128]} frustumCulled={false}>
+      <instancedMesh
+        args={[undefined as any, undefined as any, 128]}
+        frustumCulled={false}
+        ref={imRef}
+      >
         <sphereGeometry args={[BULLET_SIZE * 0.9, 10, 10]} />
         <meshBasicMaterial color="#86e0ff" toneMapped={false} />
       </instancedMesh>
@@ -229,6 +256,6 @@ const Ghost = ({ position = [8, 0, 8], speed = GHOST_SPEED, name = "ghost" }: Gh
   );
 };
 
-useGLTF.preload("/assets/character-ghost.glb");
+useGLTF.preload('/assets/character-ghost.glb');
 
 export default Ghost;

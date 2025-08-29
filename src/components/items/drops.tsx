@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
-import { useGame } from "@/store/game";
-import { HEART_PICKUP_RADIUS } from "@/config/gameplay";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+
+import { HEART_PICKUP_RADIUS } from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 const Drops = () => {
   const drops = useGame((s) => s.drops);
@@ -15,7 +16,8 @@ const Drops = () => {
   const tmp = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
-    if (!playerRef.current) playerRef.current = scene.getObjectByName("player") || null;
+    if (!playerRef.current)
+      playerRef.current = scene.getObjectByName('player') || null;
     if (!playerRef.current) return;
     const p = playerRef.current.getWorldPosition(tmp.set(0, 0, 0));
     // Check pickups
@@ -33,7 +35,11 @@ const Drops = () => {
   return (
     <group>
       {drops.map((d) => (
-        <mesh key={d.id} position={[d.position[0], 0.5, d.position[2]]} renderOrder={1000}>
+        <mesh
+          key={d.id}
+          position={[d.position[0], 0.5, d.position[2]]}
+          renderOrder={1000}
+        >
           <sphereGeometry args={[0.15, 10, 10]} />
           <meshBasicMaterial color="#ff4d7d" toneMapped={false} />
         </mesh>
@@ -43,4 +49,3 @@ const Drops = () => {
 };
 
 export default Drops;
-

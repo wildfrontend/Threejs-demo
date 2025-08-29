@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
-import { COLLISION_RADIUS } from "@/config/gameplay";
-import { useGame } from "@/store/game";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+
+import { COLLISION_RADIUS } from '@/config/gameplay';
+import { useGame } from '@/store/game';
 
 const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
   const { scene } = useThree();
@@ -17,7 +18,7 @@ const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
 
   useFrame(() => {
     if (!playerRef.current) {
-      playerRef.current = scene.getObjectByName("player") || null;
+      playerRef.current = scene.getObjectByName('player') || null;
       if (!playerRef.current) return;
     }
 
@@ -41,9 +42,9 @@ const CollisionRange = ({ radius = COLLISION_RADIUS }: { radius?: number }) => {
   // Thin ring aligned to ground
   const r = computedRadius ?? radius;
   return (
-    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+    <mesh ref={ringRef} renderOrder={999} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[r - 0.06, r + 0.06, 64]} />
-      <meshBasicMaterial color="#44e0ff" transparent opacity={0.9} />
+      <meshBasicMaterial color="#44e0ff" opacity={0.9} transparent />
     </mesh>
   );
 };
