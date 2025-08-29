@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { AMMO_CAPACITY } from "@/config/gameplay";
 
 type GameState = {
   maxHealth: number;
@@ -9,6 +10,14 @@ type GameState = {
   damage: (amount?: number) => void;
   heal: (amount?: number) => void;
   resetHealth: () => void;
+  ammoCapacity: number;
+  ammo: number;
+  setAmmo: (value: number) => void;
+  consumeAmmo: (amount?: number) => void;
+  reloadAmmo: () => void;
+  reloading: boolean;
+  setReloading: (value: boolean) => void;
+  startReload: () => void;
 };
 
 export const useGame = create<GameState>((set, get) => ({
@@ -35,5 +44,25 @@ export const useGame = create<GameState>((set, get) => ({
       const { maxHealth } = get();
       return { health: maxHealth };
     }),
+  ammoCapacity: AMMO_CAPACITY,
+  ammo: AMMO_CAPACITY,
+  setAmmo: (value) =>
+    set(() => {
+      const { ammoCapacity } = get();
+      const clamped = Math.max(0, Math.min(value, ammoCapacity));
+      return { ammo: clamped };
+    }),
+  consumeAmmo: (amount = 1) =>
+    set(() => {
+      const { ammo } = get();
+      return { ammo: Math.max(0, ammo - amount) };
+    }),
+  reloadAmmo: () =>
+    set(() => {
+      const { ammoCapacity } = get();
+      return { ammo: ammoCapacity };
+    }),
+  reloading: false,
+  setReloading: (value) => set(() => ({ reloading: value })),
+  startReload: () => set(() => ({ reloading: true })),
 }));
-

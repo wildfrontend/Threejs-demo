@@ -7,6 +7,7 @@ import * as THREE from 'three';
 
 import Map from '@/components/map';
 import Player from '@/components/player';
+import Bullets from '@/components/combat/bullets';
 
 function Sandbox() {
   return (
@@ -16,6 +17,7 @@ function Sandbox() {
         { name: 'backward', keys: ['s', 'ArrowDown'] },
         { name: 'left', keys: ['a', 'ArrowLeft'] },
         { name: 'right', keys: ['d', 'ArrowRight'] },
+        { name: 'shoot', keys: [' ', 'Space', 'Enter'] },
       ]}
     >
       <Canvas camera={{ position: [0, 14, 0], fov: 45 }} shadows>
@@ -25,6 +27,7 @@ function Sandbox() {
           <Map />
           <Player />
           <FollowCamera />
+          <Bullets />
         </Suspense>
       </Canvas>
     </KeyboardControls>
