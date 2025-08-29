@@ -11,11 +11,11 @@ type Upgrade = {
 };
 
 const ALL_UPGRADES: Upgrade[] = [
-  { key: "maxHealth", title: "增加一顆心", desc: "最大生命值 +1" },
-  { key: "bulletDamage", title: "子彈更痛", desc: "子彈傷害 +1" },
-  { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散" },
-  { key: "moveSpeed", title: "移動更快", desc: "移動速度 +10%" },
-  { key: "ammoCapacity", title: "更多彈藥", desc: "彈藥容量 +1（並回滿）" },
+  { key: "maxHealth", title: "增加一顆心", desc: "最大生命值 +1（LV5：上限×2，並回滿）" },
+  { key: "bulletDamage", title: "子彈更痛", desc: "子彈傷害 +1（LV5：子彈可穿透）" },
+  { key: "bulletCount", title: "散彈更多", desc: "每次多發 1 顆，扇形擴散（LV5：達上限）" },
+  { key: "moveSpeed", title: "移動更快", desc: "移動速度 +10%（LV5：空白鍵無敵2s，冷卻30s，面板顯示）" },
+  { key: "ammoCapacity", title: "更多彈藥", desc: "彈藥容量 +1（並回滿；LV5：無限彈藥）" },
 ];
 
 function sampleUnique<T>(arr: T[], n: number) {
@@ -47,14 +47,25 @@ const LevelUpHUD = () => {
 
   const [choices, setChoices] = useState<Upgrade[]>([]);
 
-  // When there's pending upgrades, roll 3 random choices
+  // When there's pending upgrades, roll 3 random choices (filter out maxed LV5)
   useEffect(() => {
     if (upgradePending > 0) {
-      setChoices(sampleUnique(ALL_UPGRADES, 3));
+      const getLv = (key: Upgrade["key"]) =>
+        key === "maxHealth"
+          ? Math.max(1, maxHealth - BASE_MAX_HEALTH + 1)
+          : key === "bulletDamage"
+          ? Math.max(1, bulletDamage)
+          : key === "bulletCount"
+          ? Math.max(1, bulletCount)
+          : key === "ammoCapacity"
+          ? Math.max(1, ammoCapacity - BASE_AMMO_CAPACITY + 1)
+          : Math.max(1, (moveSpeedUpgrades ?? 0) + 1);
+      const available = ALL_UPGRADES.filter((u) => getLv(u.key) < 5);
+      setChoices(sampleUnique(available.length ? available : ALL_UPGRADES, 3));
     } else {
       setChoices([]);
     }
-  }, [upgradePending, level]);
+  }, [upgradePending, level, maxHealth, bulletDamage, bulletCount, ammoCapacity, moveSpeedUpgrades]);
 
   if (!paused || gameOver || upgradePending <= 0) return null;
 
@@ -63,7 +74,19 @@ const LevelUpHUD = () => {
     // After applying, if still more pending, reroll next set
     setTimeout(() => {
       if (useGame.getState().upgradePending > 0) {
-        setChoices(sampleUnique(ALL_UPGRADES, 3));
+        const s = useGame.getState();
+        const getLv = (key: Upgrade["key"]) =>
+          key === "maxHealth"
+            ? Math.max(1, s.maxHealth - BASE_MAX_HEALTH + 1)
+            : key === "bulletDamage"
+            ? Math.max(1, s.bulletDamage)
+            : key === "bulletCount"
+            ? Math.max(1, s.bulletCount)
+            : key === "ammoCapacity"
+            ? Math.max(1, s.ammoCapacity - BASE_AMMO_CAPACITY + 1)
+            : Math.max(1, (s.moveSpeedUpgrades ?? 0) + 1);
+        const available = ALL_UPGRADES.filter((x) => getLv(x.key) < 5);
+        setChoices(sampleUnique(available.length ? available : ALL_UPGRADES, 3));
       }
     }, 0);
   };

@@ -10,6 +10,7 @@ import {
   MAX_LEVEL,
   MOVE_SPEED_BASE,
   MOVE_SPEED_STEP,
+  BASE_MAX_HEALTH,
 } from "@/config/gameplay";
 
 type GameState = {
@@ -36,6 +37,12 @@ type GameState = {
   paused: boolean;
   setPaused: (value: boolean) => void;
   togglePaused: () => void;
+  // Invincibility ability (unlocked at moveSpeed LV5)
+  invincible: boolean;
+  invincibleFor: number; // seconds remaining for active invincibility
+  invincibleCooldown: number; // seconds remaining for cooldown
+  triggerInvincible: () => void;
+  updateInvincible: (delta: number) => void;
   // Game lifecycle
   gameOver: boolean;
   resetGame: () => void;
@@ -53,6 +60,7 @@ type GameState = {
   bulletCount: number;
   moveSpeed: number;
   moveSpeedUpgrades: number;
+  infiniteAmmo: boolean;
 };
 
 const xpNeededForLevel = (level: number) => XP_BASE + (level - 1) * XP_STEP;
@@ -68,7 +76,8 @@ export const useGame = create<GameState>((set, get) => ({
     }),
   damage: (amount = 1) =>
     set(() => {
-      const { health } = get();
+      const { health, invincible } = get();
+      if (invincible) return {} as any;
       const next = Math.max(0, health - amount);
       const changes: Partial<GameState> = { health: next };
       if (next <= 0) {
@@ -121,6 +130,28 @@ export const useGame = create<GameState>((set, get) => ({
   paused: false,
   setPaused: (value) => set(() => ({ paused: !!value })),
   togglePaused: () => set(() => ({ paused: !get().paused })),
+  // Invincibility
+  invincible: false,
+  invincibleFor: 0,
+  invincibleCooldown: 0,
+  triggerInvincible: () =>
+    set(() => {
+      const { invincibleCooldown, moveSpeedUpgrades, paused } = get() as any;
+      // unlock at LV5 (moveSpeedUpgrades + 1 >= 5)
+      const unlocked = (moveSpeedUpgrades ?? 0) + 1 >= 5;
+      if (!unlocked || paused || (invincibleCooldown ?? 0) > 0) return {} as any;
+      return { invincible: true, invincibleFor: 2.0, invincibleCooldown: 30.0 } as any;
+    }),
+  updateInvincible: (delta: number) =>
+    set(() => {
+      let { invincible, invincibleFor, invincibleCooldown } = get() as any;
+      if (invincibleCooldown > 0) invincibleCooldown = Math.max(0, invincibleCooldown - delta);
+      if (invincible) {
+        invincibleFor = Math.max(0, invincibleFor - delta);
+        if (invincibleFor <= 0) invincible = false;
+      }
+      return { invincible, invincibleFor, invincibleCooldown } as any;
+    }),
   // Game lifecycle
   gameOver: false,
   runId: 0,
@@ -147,6 +178,10 @@ export const useGame = create<GameState>((set, get) => ({
         bulletCount: 1,
         moveSpeedUpgrades: 0,
         moveSpeed: MOVE_SPEED_BASE,
+        infiniteAmmo: false,
+        invincible: false,
+        invincibleFor: 0,
+        invincibleCooldown: 0,
         // remount scene consumers
         runId: get().runId + 1,
       } as any;
@@ -161,6 +196,7 @@ export const useGame = create<GameState>((set, get) => ({
   bulletCount: 1,
   moveSpeedUpgrades: 0,
   moveSpeed: MOVE_SPEED_BASE,
+  infiniteAmmo: false,
   addXp: (amount = 1) => {
     let { xp, level, xpToNext } = get();
     const prevLevel = level;
@@ -198,21 +234,36 @@ export const useGame = create<GameState>((set, get) => ({
           maxHealth = Math.max(1, (maxHealth ?? 1) + 1);
           // Refill to full when gaining a heart
           health = maxHealth;
+          // At LV5, double max health once
+          {
+            const heartLv = (maxHealth - BASE_MAX_HEALTH) + 1;
+            if (heartLv === 5) {
+              maxHealth = Math.max(1, maxHealth * 2);
+              health = maxHealth;
+            }
+          }
           break;
         case "bulletDamage":
-          bulletDamage = (bulletDamage ?? 1) + 1;
+          bulletDamage = Math.min(5, (bulletDamage ?? 1) + 1);
           break;
         case "bulletCount":
-          bulletCount = Math.max(1, (bulletCount ?? 1) + 1);
+          bulletCount = Math.min(5, Math.max(1, (bulletCount ?? 1) + 1));
           break;
         case "ammoCapacity":
           ammoCapacity = Math.max(1, (ammoCapacity ?? 1) + 1);
-          // Refill to the new capacity when upgrading ammo size
+          // Refill to the new capacity
           ammo = ammoCapacity;
+          // At LV5, grant infinite ammo (no reload / no consumption)
+          const ammoLv = (ammoCapacity - AMMO_CAPACITY) + 1;
+          if (ammoLv >= 5) {
+            (s as any).infiniteAmmo = true;
+            (s as any).reloading = false;
+          }
           break;
         case "moveSpeed":
-          // Use formula: base * (1 + step * count)
-          const newCount = (s as any).moveSpeedUpgrades + 1;
+          // Use formula: base * (1 + step * count); clamp to LV5 (count<=4)
+          const newCountRaw = (s as any).moveSpeedUpgrades + 1;
+          const newCount = Math.min(4, newCountRaw);
           moveSpeed = MOVE_SPEED_BASE * (1 + MOVE_SPEED_STEP * newCount);
           return {
             maxHealth,

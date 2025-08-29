@@ -11,12 +11,14 @@ type Controls = {
   backward: boolean;
   left: boolean;
   right: boolean;
+  shoot: boolean;
 };
 
 const Player = () => {
   const group = useRef<THREE.Group>(null!);
   const { scene } = useGLTF('/assets/character-digger.glb');
   const [, get] = useKeyboardControls<Controls>();
+  const prevShoot = useRef(false);
   const gameGet = useRef(useGame.getState).current;
 
   useEffect(() => {
@@ -29,8 +31,16 @@ const Player = () => {
   }, [scene]);
 
   useFrame((_, delta) => {
+    // Update invincibility timers
+    gameGet().updateInvincible?.(delta);
+    
     if (gameGet().paused) return;
-    const { forward, backward, left, right } = get();
+    const { forward, backward, left, right, shoot } = get();
+    // Edge trigger for invincibility
+    if (shoot && !prevShoot.current) {
+      gameGet().triggerInvincible?.();
+    }
+    prevShoot.current = shoot;
 
     const dir = new THREE.Vector3(
       (left ? -1 : 0) + (right ? 1 : 0),

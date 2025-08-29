@@ -143,10 +143,11 @@ const Bullets = () => {
 
     // Auto fire every AUTO_FIRE_INTERVAL seconds when not reloading
     if (!store.reloading && lastShotAt.current >= AUTO_FIRE_INTERVAL) {
-      if (store.ammo > 0) {
+      const infinite = store.infiniteAmmo ?? false;
+      if (infinite || store.ammo > 0) {
         spawnBullet();
         lastShotAt.current = 0;
-        store.consumeAmmo(1);
+        if (!infinite) store.consumeAmmo(1);
       } else {
         // trigger reload if empty
         store.startReload();
@@ -155,13 +156,13 @@ const Bullets = () => {
     }
 
     // Auto start reload if empty even without pressing
-    if (!store.reloading && store.ammo === 0) {
+    if (!store.infiniteAmmo && !store.reloading && store.ammo === 0) {
       store.startReload();
       reloadTimer.current = 0;
     }
 
     // Progress reload timer
-    if (store.reloading) {
+    if (!store.infiniteAmmo && store.reloading) {
       reloadTimer.current += delta;
       if (reloadTimer.current >= RELOAD_TIME) {
         store.reloadAmmo();
@@ -182,12 +183,13 @@ const Bullets = () => {
 
       let keep = b.traveled <= BULLET_RANGE;
 
-      // Collision against zombies: bounding-sphere test using their Box3 sphere
+      // Collision against monsters: bounding-sphere test using their Box3 sphere
       if (keep && (scene as any)?.traverse) {
+        const pierce = (gameGet().bulletDamage ?? 1) >= 5;
         let hit = false;
         try {
           scene.traverse((obj) => {
-            if (hit) return;
+            if (!pierce && hit) return;
             if (!obj?.name) return;
             const n2 = obj.name.toLowerCase();
             const isMonster2 =
@@ -220,8 +222,10 @@ const Bullets = () => {
               const dmg = gameGet().bulletDamage ?? 1;
               const nextHp = Math.max(0, curHp - dmg);
               z.userData = { ...z.userData, hp: nextHp, maxHp };
-              keep = false; // bullet consumed on hit
-              hit = true;
+              if (!pierce) {
+                keep = false; // bullet consumed on hit
+                hit = true;
+              }
               if (nextHp <= 0) {
                 // 僅標記死亡與隱藏，讓 Spawner 接手卸載/重生
                 z.userData = { ...z.userData, killed: true };

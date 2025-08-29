@@ -7,6 +7,7 @@ import KillsHUD from '@/components/hud/kills';
 import LevelUpHUD from '@/components/hud/levelup';
 import PauseHUD from '@/components/hud/pause';
 import XPHUD from '@/components/hud/xp';
+import InvincibleHUD from '@/components/hud/invincible';
 import Sandbox from '@/components/sandbox';
 import { useGame } from '@/store/game';
 
@@ -21,6 +22,7 @@ function Page() {
       <PauseHUD />
       <XPHUD />
       <LevelUpHUD />
+      <InvincibleHUD />
       <GameOverHUD />
     </div>
   );
